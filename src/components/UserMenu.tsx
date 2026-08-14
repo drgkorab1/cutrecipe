@@ -28,58 +28,31 @@ export default function UserMenu() {
 
   const email = user?.email ?? ''
   const initial = email[0]?.toUpperCase() ?? '?'
-  const truncated = email.length > 22 ? email.slice(0, 20) + '…' : email
 
   return (
     <div ref={menuRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen((v) => !v)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          background: 'white',
-          border: '1px solid var(--line)',
-          borderRadius: 99,
-          padding: '5px 12px 5px 6px',
-          cursor: 'pointer',
-          fontSize: 14,
-          color: 'var(--ink)',
-        }}
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-label="Account menu"
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          background: 'var(--accent)',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 14,
+          fontWeight: 700,
+          border: 'none',
+          cursor: 'pointer',
+          flexShrink: 0,
+        }}
       >
-        <span
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: '50%',
-            background: 'var(--accent)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 13,
-            fontWeight: 700,
-            flexShrink: 0,
-          }}
-          aria-hidden="true"
-        >
-          {initial}
-        </span>
-        <span style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {truncated}
-        </span>
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          aria-hidden="true"
-          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s', flexShrink: 0 }}
-        >
-          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {initial}
       </button>
 
       {open && (
