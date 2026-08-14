@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Couldn't find a recipe in that text. Try including ingredients and steps." }, { status: 422 })
     }
     await enhanceWithAI(recipe)
-    if (userId) void logExtraction(userId, null, recipe.title ?? null)
+    if (userId) await logExtraction(userId, null, recipe.title ?? null)
     return NextResponse.json(recipe)
   }
 
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
     }
 
     await enhanceWithAI(tikTokResult.recipe)
-    if (userId) void logExtraction(userId, normUrl, tikTokResult.recipe.title ?? null)
+    if (userId) await logExtraction(userId, normUrl, tikTokResult.recipe.title ?? null)
     return NextResponse.json(tikTokResult.recipe)
   }
 
@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
       const ytRecipe = await extractFromYouTubeAPI(normUrl)
       if (ytRecipe) {
         await enhanceWithAI(ytRecipe)
-        if (userId) void logExtraction(userId, normUrl, ytRecipe.title ?? null)
+        if (userId) await logExtraction(userId, normUrl, ytRecipe.title ?? null)
         return NextResponse.json(ytRecipe)
       }
     } catch (err) {
@@ -287,6 +287,6 @@ export async function POST(req: NextRequest) {
   }
 
   await enhanceWithAI(recipe)
-  if (userId) void logExtraction(userId, normUrl, recipe.title ?? null)
+  if (userId) await logExtraction(userId, normUrl, recipe.title ?? null)
   return NextResponse.json(recipe)
 }
