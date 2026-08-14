@@ -29,13 +29,16 @@ function isRateLimited(ip: string): boolean {
 // ─── Daily limit for anonymous users ──────────────────────────────────────────
 const DAILY_LIMIT_ANON = 5
 
-async function logExtraction(userId: string, sourceUrl: string | null, title: string | null): Promise<void> {
+async function logExtraction(userId: string | null, sourceUrl: string | null, title: string | null): Promise<void> {
   try {
     const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!supabaseUrl || !serviceRoleKey) return
     const admin = createAdminClient(supabaseUrl, serviceRoleKey)
-    await admin.from('user_extractions').insert({ user_id: userId, source_url: sourceUrl, title })
+    await Promise.all([
+      admin.from('extractions_log').insert({ user_id: userId, source_url: sourceUrl, title }),
+      userId ? admin.from('user_extractions').insert({ user_id: userId, source_url: sourceUrl, title }) : Promise.resolve(),
+    ])
   } catch { /* non-critical */ }
 }
 
@@ -150,7 +153,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Couldn't find a recipe in that text. Try including ingredients and steps." }, { status: 422 })
     }
     await enhanceWithAI(recipe)
-    if (userId) await logExtraction(userId, null, recipe.title ?? null)
+    await logExtraction(userId, null, recipe.title ?? null)
     return NextResponse.json(recipe)
   }
 
@@ -200,7 +203,7 @@ export async function POST(req: NextRequest) {
     }
 
     await enhanceWithAI(tikTokResult.recipe)
-    if (userId) await logExtraction(userId, normUrl, tikTokResult.recipe.title ?? null)
+    await logExtraction(userId, normUrl, tikTokResult.recipe.title ?? null)
     return NextResponse.json(tikTokResult.recipe)
   }
 
@@ -210,7 +213,7 @@ export async function POST(req: NextRequest) {
       const ytRecipe = await extractFromYouTubeAPI(normUrl)
       if (ytRecipe) {
         await enhanceWithAI(ytRecipe)
-        if (userId) await logExtraction(userId, normUrl, ytRecipe.title ?? null)
+        await logExtraction(userId, normUrl, ytRecipe.title ?? null)
         return NextResponse.json(ytRecipe)
       }
     } catch (err) {
@@ -287,6 +290,6 @@ export async function POST(req: NextRequest) {
   }
 
   await enhanceWithAI(recipe)
-  if (userId) await logExtraction(userId, normUrl, recipe.title ?? null)
+  await logExtraction(userId, normUrl, recipe.title ?? null)
   return NextResponse.json(recipe)
 }
