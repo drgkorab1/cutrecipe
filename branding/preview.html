@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skip The Story — Brand Preview</title>
+  <style>
+    :root {
+      --bg: #FBF7F1;
+      --card: #FFFFFF;
+      --ink: #1E1B18;
+      --muted: #6E655C;
+      --line: #E7DFD4;
+      --accent: #C0532A;
+      --accent-soft: #F6E7DE;
+      --green: #3F6B4A;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      padding: 60px 28px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    h1 { font-family: Georgia, serif; font-size: 40px; margin-bottom: 40px; }
+    h2 { font-family: Georgia, serif; font-size: 28px; margin-top: 50px; margin-bottom: 20px; border-top: 1px solid var(--line); padding-top: 30px; }
+    section { margin-bottom: 60px; }
+
+    .logo-section img { max-width: 300px; }
+
+    .colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .color { border-radius: 12px; padding: 16px; text-align: center; border: 1px solid var(--line); }
+    .color-swatch { width: 100%; height: 80px; border-radius: 8px; margin-bottom: 12px; }
+    .color code { font-size: 12px; color: var(--muted); word-break: break-all; }
+
+    .typography { margin: 30px 0; }
+    .type-sample { background: var(--card); padding: 20px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 20px; }
+    .type-h1 { font-family: Georgia, serif; font-size: 34px; font-weight: 600; margin-bottom: 8px; }
+    .type-h2 { font-family: Georgia, serif; font-size: 21px; font-weight: 600; margin-bottom: 8px; }
+    .type-body { font-size: 16px; line-height: 1.55; margin-bottom: 8px; }
+    .type-small { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--muted); }
+
+    .buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+    button { font-family: inherit; font-size: 14px; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: white; font-weight: 600; }
+    .btn-primary:hover { background: #A9451F; }
+    .btn-ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+
+    .icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+    .icon-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .icon-item svg { width: 40px; height: 40px; stroke: var(--accent); }
+    .icon-item code { font-size: 11px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Skip The Story</h1>
+  <p style="color: var(--muted); margin-bottom: 40px;">Brand Guidelines Preview</p>
+
+  <section class="logo-section">
+    <h2>Logo</h2>
+    <svg viewBox="0 0 240 64" xmlns="http://www.w3.org/2000/svg" style="max-width: 300px;">
+      <rect x="4" y="4" width="56" height="56" rx="8" fill="#C0532A"/>
+      <path d="M 22 28 Q 22 20 28 20 Q 32 20 32 24 L 28 24 Q 26 24 26 26 Q 26 28 32 30 L 32 30 Q 38 32 38 38 Q 38 44 32 44 Q 26 44 26 40 L 30 40 Q 30 42 32 42 Q 34 42 34 40 Q 34 38 28 36 L 28 36 Q 22 34 22 28 Z" fill="white" transform="translate(-2 -2) scale(1.1)"/>
+      <text x="68" y="48" font-family="Georgia, serif" font-size="32" font-weight="600" fill="#1E1B18" letter-spacing="-0.02em">Skip The Story</text>
+    </svg>
+  </section>
+
+  <section>
+    <h2>Colors</h2>
+    <div class="colors">
+      <div class="color"><div class="color-swatch" style="background: #FBF7F1; border: 1px solid var(--line);"></div><strong>Background</strong><code>#FBF7F1</code></div>
+      <div class="color"><div class="color-swatch" style="background: #FFFFFF; border: 1px solid var(--line);"></div><strong>Card</strong><code>#FFFFFF</code></div>
+      <div class="color"><div class="color-swatch" style="background: #1E1B18;"></div><strong>Text</strong><code>#1E1B18</code></div>
+      <div class="color"><div class="color-swatch" style="background: #6E655C;"></div><strong>Muted</strong><code>#6E655C</code></div>
+      <div class="color"><div class="color-swatch" style="background: #E7DFD4;"></div><strong>Border</strong><code>#E7DFD4</code></div>
+      <div class="color"><div class="color-swatch" style="background: #C0532A;"></div><strong>Accent</strong><code>#C0532A</code></div>
+      <div class="color"><div class="color-swatch" style="background: #F6E7DE;"></div><strong>Accent Soft</strong><code>#F6E7DE</code></div>
+      <div class="color"><div class="color-swatch" style="background: #3F6B4A;"></div><strong>Success</strong><code>#3F6B4A</code></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Typography</h2>
+    <div class="type-sample">
+      <div class="type-h1">This is a heading (H1)</div>
+      <div class="type-small">Subtitle</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-h2">This is a heading (H2)</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-body">This is body text. It uses a system sans-serif font with a line height of 1.55 for comfortable reading. Nothing fancy, just clear and readable.</div>
+    </div>
+    <div class="type-sample">
+      <div class="type-small">SMALL LABEL / CAPTION</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Components</h2>
+    <h3 style="font-size: 14px; color: var(--muted); margin-top: 20px; margin-bottom: 12px;">Buttons</h3>
+    <div class="buttons">
+      <button class="btn-primary">Get the recipe only</button>
+      <button class="btn-ghost">Sign in</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Icons</h2>
+    <div class="icon-grid">
+      <div class="icon-item">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <code>check</code>
+      </div>
+      <div class="icon-item">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <code>star</code>
+      </div>
+      <div class="icon-item">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        <code>print</code>
+      </div>
+      <div class="icon-item">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+        <code>share</code>
+      </div>
+      <div class="icon-item">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <code>menu</code>
+      </div>
+      <div class="icon-item">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        <code>close</code>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

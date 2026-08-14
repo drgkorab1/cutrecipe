@@ -1,0 +1,21 @@
+{
+  "background": "#FBF7F1",
+  "card": "#FFFFFF",
+  "text": "#1E1B18",
+  "textMuted": "#6E655C",
+  "border": "#E7DFD4",
+  "accent": "#C0532A",
+  "accentSoft": "#F6E7DE",
+  "success": "#3F6B4A",
+  "error": "#A9451F",
+  "cssVariables": {
+    "--bg": "#FBF7F1",
+    "--card": "#FFFFFF",
+    "--ink": "#1E1B18",
+    "--muted": "#6E655C",
+    "--line": "#E7DFD4",
+    "--accent": "#C0532A",
+    "--accent-soft": "#F6E7DE",
+    "--green": "#3F6B4A"
+  }
+}
