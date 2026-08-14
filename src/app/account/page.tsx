@@ -221,7 +221,7 @@ export default function AccountPage() {
               className="flex flex-wrap justify-center gap-2 sm:justify-start"
               style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(192,83,42,.12)' }}
             >
-              {extractionCount > 0 && (
+              {extractionCount >= recipes.length && extractionCount > 0 && (
                 <span style={chipStyle}>🔍 {extractionCount} {extractionCount === 1 ? 'recipe' : 'recipes'} explored</span>
               )}
               {saveRate !== null && (
