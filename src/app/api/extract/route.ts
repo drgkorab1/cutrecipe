@@ -6,6 +6,8 @@ import type { RecipeData } from '@/types/recipe'
 import { isYouTubeUrl, extractFromYouTube, extractFromYouTubeAPI } from '@/lib/youtube'
 import { isTikTokUrl, extractFromTikTok } from '@/lib/tiktok'
 import { generateRecipeSummary, generateNutritionEstimate, parseRecipeWithAI } from '@/lib/ai-parser'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
 const rateLimits = new Map<string, { count: number; resetAt: number }>()
@@ -22,6 +24,40 @@ function isRateLimited(ip: string): boolean {
   if (entry.count >= RATE_LIMIT) return true
   entry.count++
   return false
+}
+
+// ─── Daily limit for anonymous users ──────────────────────────────────────────
+const DAILY_LIMIT_ANON = 5
+
+async function checkDailyLimit(ip: string): Promise<'ok' | 'reached'> {
+  const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceRoleKey) return 'ok' // graceful degradation
+
+  const admin = createAdminClient(supabaseUrl, serviceRoleKey)
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+
+  const { data } = await admin
+    .from('daily_extractions')
+    .select('count')
+    .eq('ip', ip)
+    .eq('date', today)
+    .maybeSingle()
+
+  const currentCount = (data as { count: number } | null)?.count ?? 0
+  if (currentCount >= DAILY_LIMIT_ANON) return 'reached'
+
+  if (currentCount === 0) {
+    await admin.from('daily_extractions').insert({ ip, date: today, count: 1 })
+  } else {
+    await admin
+      .from('daily_extractions')
+      .update({ count: currentCount + 1 })
+      .eq('ip', ip)
+      .eq('date', today)
+  }
+
+  return 'ok'
 }
 
 function normaliseUrl(url: URL): string {
@@ -63,6 +99,18 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
+
+  // ─── Daily limit for anonymous users ─────────────────────────────────────────
+  try {
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      const limitStatus = await checkDailyLimit(ip)
+      if (limitStatus === 'reached') {
+        return NextResponse.json({ error: 'daily_limit_reached' }, { status: 429 })
+      }
+    }
+  } catch { /* non-critical — allow through if DB is unavailable */ }
 
   // ─── Paste-text mode: structure raw recipe text without a URL ───────────────
   if (body.text && !body.url) {

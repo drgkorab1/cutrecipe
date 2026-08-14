@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import type { RecipeData } from '@/types/recipe'
 import RecipeCard from './RecipeCard'
 import SkeletonCard from './SkeletonCard'
+import { useAuth } from '@/context/AuthContext'
 
 type Mode  = 'url' | 'text'
 type State =
@@ -11,6 +12,7 @@ type State =
   | { status: 'loading' }
   | { status: 'success'; data: RecipeData }
   | { status: 'error'; message: string; sourceUrl?: string }
+  | { status: 'limit_reached' }
 
 function urlToSlug(url: string): string {
   try {
@@ -26,6 +28,7 @@ function urlToSlug(url: string): string {
 }
 
 export default function RecipeForm() {
+  const { openAuthModal } = useAuth()
   const [mode, setMode]   = useState<Mode>('url')
   const [url, setUrl]     = useState('')
   const [text, setText]   = useState('')
@@ -47,6 +50,11 @@ export default function RecipeForm() {
       const data = await res.json()
 
       if (!res.ok) {
+        if (data.error === 'daily_limit_reached') {
+          setState({ status: 'limit_reached' })
+          setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+          return
+        }
         // TikTok-specific: if the server returned a meaningful caption, pre-fill text mode.
         // Skip auto-switching for short/hashtag-only captions — not helpful to the user.
         if (data.caption && data.caption.length > 80 && mode === 'url') {
@@ -205,6 +213,30 @@ export default function RecipeForm() {
                   Paste the description →
                 </button>
               )}
+            </div>
+          )}
+
+          {state.status === 'limit_reached' && (
+            <div
+              className="mx-auto text-center"
+              style={{ maxWidth: 560, borderRadius: 20, padding: '64px 40px', background: '#1E1B18' }}
+            >
+              <p
+                className="font-serif font-semibold"
+                style={{ fontSize: 26, color: '#FBF7F1', marginBottom: 12 }}
+              >
+                You've hit your daily limit
+              </p>
+              <p style={{ fontSize: 15, color: '#A89C8E', marginBottom: 32, lineHeight: 1.75 }}>
+                Free accounts get 5 recipe extractions per day. Sign up to get unlimited extractions and save your favourite recipes — no credit card needed.
+              </p>
+              <button
+                onClick={openAuthModal}
+                className="rounded-btn bg-accent font-semibold text-white transition-colors hover:bg-[#A9451F]"
+                style={{ fontSize: 15.5, padding: '14px 28px' }}
+              >
+                Create a free account →
+              </button>
             </div>
           )}
         </div>
