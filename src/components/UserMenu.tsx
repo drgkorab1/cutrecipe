@@ -47,7 +47,8 @@ export default function UserMenu() {
           justifyContent: 'center',
           fontSize: 14,
           fontWeight: 700,
-          border: 'none',
+          border: '2px solid white',
+          outline: '2px solid var(--accent)',
           cursor: 'pointer',
           flexShrink: 0,
         }}
