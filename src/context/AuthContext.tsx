@@ -10,7 +10,7 @@ interface AuthContextValue {
   loading: boolean
   authModalOpen: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   openAuthModal: () => void
   closeAuthModal: () => void
@@ -44,8 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null }
   }, [supabase])
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
+  const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: fullName ? { data: { full_name: fullName } } : undefined,
+    })
     if (!error) setAuthModalOpen(false)
     return { error: error?.message ?? null }
   }, [supabase])

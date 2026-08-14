@@ -29,6 +29,16 @@ function isRateLimited(ip: string): boolean {
 // ─── Daily limit for anonymous users ──────────────────────────────────────────
 const DAILY_LIMIT_ANON = 5
 
+async function logExtraction(userId: string, sourceUrl: string | null, title: string | null): Promise<void> {
+  try {
+    const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !serviceRoleKey) return
+    const admin = createAdminClient(supabaseUrl, serviceRoleKey)
+    await admin.from('user_extractions').insert({ user_id: userId, source_url: sourceUrl, title })
+  } catch { /* non-critical */ }
+}
+
 async function checkDailyLimit(ip: string): Promise<'ok' | 'reached'> {
   const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -100,7 +110,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  // ─── Daily limit for anonymous users ─────────────────────────────────────────
+  // ─── Auth check + daily limit for anonymous users ────────────────────────────
+  let userId: string | null = null
   try {
     const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -109,6 +120,8 @@ export async function POST(req: NextRequest) {
       if (limitStatus === 'reached') {
         return NextResponse.json({ error: 'daily_limit_reached' }, { status: 429 })
       }
+    } else {
+      userId = user.id
     }
   } catch { /* non-critical — allow through if DB is unavailable */ }
 
@@ -137,6 +150,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Couldn't find a recipe in that text. Try including ingredients and steps." }, { status: 422 })
     }
     await enhanceWithAI(recipe)
+    if (userId) void logExtraction(userId, null, recipe.title ?? null)
     return NextResponse.json(recipe)
   }
 
@@ -186,6 +200,7 @@ export async function POST(req: NextRequest) {
     }
 
     await enhanceWithAI(tikTokResult.recipe)
+    if (userId) void logExtraction(userId, normUrl, tikTokResult.recipe.title ?? null)
     return NextResponse.json(tikTokResult.recipe)
   }
 
@@ -195,6 +210,7 @@ export async function POST(req: NextRequest) {
       const ytRecipe = await extractFromYouTubeAPI(normUrl)
       if (ytRecipe) {
         await enhanceWithAI(ytRecipe)
+        if (userId) void logExtraction(userId, normUrl, ytRecipe.title ?? null)
         return NextResponse.json(ytRecipe)
       }
     } catch (err) {
@@ -271,5 +287,6 @@ export async function POST(req: NextRequest) {
   }
 
   await enhanceWithAI(recipe)
+  if (userId) void logExtraction(userId, normUrl, recipe.title ?? null)
   return NextResponse.json(recipe)
 }

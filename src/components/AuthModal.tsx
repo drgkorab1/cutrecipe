@@ -8,6 +8,8 @@ export default function AuthModal() {
   const { signIn, signUp, closeAuthModal } = useAuth()
   const [tab, setTab] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -37,9 +39,10 @@ export default function AuthModal() {
     }
 
     setLoading(true)
+    const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ')
     const { error: err } = tab === 'signin'
       ? await signIn(email, password)
-      : await signUp(email, password)
+      : await signUp(email, password, fullName || undefined)
     setLoading(false)
 
     if (err) setError(err)
@@ -126,6 +129,55 @@ export default function AuthModal() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {tab === 'signup' && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 5 }}>
+                  First name <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 13px',
+                    borderRadius: 10,
+                    border: '1px solid var(--line)',
+                    background: 'white',
+                    fontSize: 15,
+                    color: 'var(--ink)',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 5 }}>
+                  Last name <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 13px',
+                    borderRadius: 10,
+                    border: '1px solid var(--line)',
+                    background: 'white',
+                    fontSize: 15,
+                    color: 'var(--ink)',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 5 }}>
               Email

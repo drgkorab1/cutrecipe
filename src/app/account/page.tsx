@@ -31,6 +31,7 @@ export default function AccountPage() {
   const [recipes, setRecipes] = useState<SavedRecipe[]>([])
   const [recipesLoading, setRecipesLoading] = useState(true)
   const [activeRecipe, setActiveRecipe] = useState<SavedRecipe | null>(null)
+  const [extractionCount, setExtractionCount] = useState<number>(0)
 
   const [newPassword, setNewPassword] = useState('')
   const [pwError, setPwError] = useState<string | null>(null)
@@ -39,6 +40,9 @@ export default function AccountPage() {
 
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const [removeTarget, setRemoveTarget] = useState<SavedRecipe | null>(null)
+  const [removeLoading, setRemoveLoading] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) { openAuthModal(); router.replace('/') }
@@ -51,11 +55,19 @@ export default function AccountPage() {
       .select('id, title, author, source_url, saved_at, total_minutes, servings, ingredients, steps')
       .order('saved_at', { ascending: false })
       .then(({ data }) => { setRecipes((data as SavedRecipe[]) ?? []); setRecipesLoading(false) })
+    supabase
+      .from('user_extractions')
+      .select('id', { count: 'exact', head: true })
+      .then(({ count }) => setExtractionCount(count ?? 0))
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleRemove(id: string) {
-    await supabase.from('user_recipes').delete().eq('id', id)
-    setRecipes((prev) => prev.filter((r) => r.id !== id))
+  async function confirmRemove() {
+    if (!removeTarget) return
+    setRemoveLoading(true)
+    await supabase.from('user_recipes').delete().eq('id', removeTarget.id)
+    setRecipes((prev) => prev.filter((r) => r.id !== removeTarget.id))
+    setRemoveLoading(false)
+    setRemoveTarget(null)
   }
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -95,62 +107,133 @@ export default function AccountPage() {
 
   if (loading || !user) return null
 
-  const initial = (user.email?.[0] ?? '?').toUpperCase()
-  const memberSince = new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  const fullName = (user.user_metadata?.full_name as string | undefined)?.trim() || null
+  const displayName = fullName ?? user.email ?? ''
+  const initial = (fullName?.[0] ?? user.email?.[0] ?? '?').toUpperCase()
+  const memberSince = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? '☀️ Morning' : hour < 17 ? '🌤 Afternoon' : '🌙 Evening'
+  const timeOfDay = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+  const chipStyle: React.CSSProperties = {
+    fontSize: 12.5, color: 'var(--muted)',
+    background: 'rgba(255,255,255,.75)',
+    border: '1px solid rgba(192,83,42,.15)',
+    borderRadius: 99,
+    padding: '4px 12px',
+    whiteSpace: 'nowrap',
+  }
+
+  const saveRate = extractionCount >= recipes.length && extractionCount > 0 && recipes.length > 0
+    ? Math.round((recipes.length / extractionCount) * 100)
+    : null
+
+  const totalCookTime = (() => {
+    const mins = recipes.reduce((sum, r) => sum + (r.total_minutes ?? 0), 0)
+    if (!mins) return null
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return h === 0 ? `${m}min` : m === 0 ? `${h}h` : `${h}h ${m}min`
+  })()
+
+  const youtubeCount = recipes.filter(r =>
+    r.source_url?.includes('youtube.com') || r.source_url?.includes('youtu.be')
+  ).length
+
+  const topDomain = (() => {
+    const counts: Record<string, number> = {}
+    for (const r of recipes) {
+      if (!r.source_url) continue
+      try {
+        const host = new URL(r.source_url).hostname.replace(/^www\./, '')
+        if (host.includes('youtube') || host.includes('youtu.be')) continue
+        counts[host] = (counts[host] ?? 0) + 1
+      } catch { /* skip */ }
+    }
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
+    return sorted[0]?.[0] ?? null
+  })()
 
   return (
     <>
       <Navbar />
 
-      <main style={{ maxWidth: 780, margin: '0 auto', padding: '36px 24px 96px' }}>
+      <main className="mx-auto px-5 pb-24 pt-10 sm:px-8" style={{ maxWidth: 780 }}>
 
-        {/* ── Profile row ──────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 36 }}>
-          <Link href="/" style={{ color: 'var(--muted)', textDecoration: 'none', display: 'flex', marginRight: 4 }}
-            className="hover:text-ink transition-colors" aria-label="Back">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M11 3L5 9l6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
+        {/* ── Profile header ────────────────────────────────────────────── */}
+        <div
+          className="mb-8 overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, #F6E7DE 0%, #FAF6F0 55%, #FFFCF9 100%)',
+            border: '1px solid var(--line)',
+            borderRadius: 20,
+            padding: '28px 28px',
+          }}
+        >
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
+            {/* Avatar */}
+            <div
+              style={{
+                width: 72, height: 72, borderRadius: '50%', flexShrink: 0,
+                background: 'var(--accent)', color: 'white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 28, fontWeight: 700,
+                fontFamily: 'var(--font-fraunces)',
+                border: '3px solid white',
+                outline: '2.5px solid var(--accent)',
+                boxShadow: '0 4px 18px -4px rgba(192,83,42,.45)',
+              }}
+            >
+              {initial}
+            </div>
 
-          {/* Avatar */}
-          <div style={{
-            width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
-            background: 'var(--accent-soft)', border: '2px solid var(--line)',
-            color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-fraunces)',
-          }}>
-            {initial}
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <h1
+                className="font-serif font-semibold text-ink"
+                style={{ fontSize: 'clamp(20px, 4vw, 26px)', marginBottom: 5, lineHeight: 1.2 }}
+              >
+                {timeOfDay}, {displayName}!
+              </h1>
+              <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>
+                Member since {memberSince}
+              </p>
+            </div>
+
+            {/* Recipe count — desktop only */}
+            {!recipesLoading && recipes.length > 0 && (
+              <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-1" style={{ flexShrink: 0 }}>
+                <p className="font-serif font-bold" style={{ fontSize: 44, color: 'var(--accent)', lineHeight: 1 }}>
+                  {recipes.length}
+                </p>
+                <p style={{ fontSize: 11.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.07em', lineHeight: 1.5, textAlign: 'right' }}>
+                  {recipes.length === 1 ? 'recipe' : 'recipes'}<br />saved
+                </p>
+              </div>
+            )}
           </div>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 17, fontWeight: 600, color: 'var(--ink)', marginBottom: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user.email}
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--muted)' }}>
-              {greeting} · Member since {memberSince}
-            </p>
-          </div>
-
-          {!recipesLoading && recipes.length > 0 && (
-            <div style={{ flexShrink: 0, textAlign: 'right' }}>
-              <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)', lineHeight: 1, fontFamily: 'var(--font-fraunces)' }}>
-                {recipes.length}
-              </p>
-              <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginTop: 2 }}>
-                saved
-              </p>
+          {/* Stat chips */}
+          {!recipesLoading && (extractionCount > 0 || recipes.length > 0) && (
+            <div
+              className="flex flex-wrap justify-center gap-2 sm:justify-start"
+              style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(192,83,42,.12)' }}
+            >
+              {extractionCount > 0 && (
+                <span style={chipStyle}>🔍 {extractionCount} {extractionCount === 1 ? 'recipe' : 'recipes'} explored</span>
+              )}
+              {saveRate !== null && (
+                <span style={chipStyle}>📖 {saveRate}% save rate</span>
+              )}
+              {topDomain && <span style={chipStyle}>🌐 Often from {topDomain}</span>}
             </div>
           )}
         </div>
 
-        {/* ── Underline tabs ───────────────────────────────────────────── */}
-        <div style={{ borderBottom: '1px solid var(--line)', marginBottom: 32, display: 'flex', gap: 0 }}>
+        {/* ── Tabs ─────────────────────────────────────────────────────── */}
+        <div style={{ borderBottom: '1px solid var(--line)', marginBottom: 32, display: 'flex' }}>
           {([
             { id: 'recipes', label: 'My Recipes', count: !recipesLoading ? recipes.length : null },
             { id: 'settings', label: 'Settings', count: null },
@@ -178,12 +261,10 @@ export default function AccountPage() {
               {label}
               {count !== null && count > 0 && (
                 <span style={{
-                  fontSize: 11,
-                  fontWeight: 600,
+                  fontSize: 11, fontWeight: 600,
                   background: tab === id ? 'var(--accent-soft)' : 'var(--line)',
                   color: tab === id ? 'var(--accent)' : 'var(--muted)',
-                  borderRadius: 99,
-                  padding: '1px 7px',
+                  borderRadius: 99, padding: '1px 7px',
                   transition: 'all .15s',
                 }}>
                   {count}
@@ -197,21 +278,23 @@ export default function AccountPage() {
         {tab === 'recipes' && (
           <>
             {recipesLoading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14 }}>
-                {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 130, borderRadius: 16 }} />)}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="skeleton" style={{ height: 220, borderRadius: 18 }} />
+                ))}
               </div>
             ) : recipes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '64px 24px' }}>
-                <p style={{ fontSize: 40, marginBottom: 16 }}>📖</p>
-                <p className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+              <div style={{ textAlign: 'center', padding: '72px 24px' }}>
+                <p style={{ fontSize: 44, marginBottom: 16 }}>📖</p>
+                <p className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>
                   Your cookbook is empty
                 </p>
-                <p style={{ fontSize: 15, color: 'var(--muted)', marginBottom: 28, maxWidth: '34ch', margin: '0 auto 28px' }}>
+                <p style={{ fontSize: 15, color: 'var(--muted)', maxWidth: '34ch', margin: '0 auto 28px', lineHeight: 1.65 }}>
                   Save any recipe and it'll live here, ready to cook from.
                 </p>
                 <Link href="/" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '11px 24px', borderRadius: 99,
+                  padding: '12px 26px', borderRadius: 99,
                   background: 'var(--accent)', color: 'white',
                   fontSize: 14, fontWeight: 600, textDecoration: 'none',
                   boxShadow: '0 4px 16px -4px rgba(192,83,42,.45)',
@@ -230,115 +313,103 @@ export default function AccountPage() {
                   const letter = r.title[0]?.toUpperCase() ?? '?'
                   const thumbnail = getYouTubeThumbnail(r.source_url)
 
-                  const card = (
-                    <div style={{
-                      background: 'var(--card)',
-                      border: '1px solid var(--line)',
-                      borderRadius: 18,
-                      overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: '100%',
-                      transition: 'box-shadow .18s, border-color .18s',
-                    }}
-                      className={r.source_url ? 'hover:shadow-md hover:border-[#D4C4B4]' : ''}
-                    >
-                      {/* Card header — thumbnail or letter banner */}
-                      <div style={{
-                        position: 'relative',
-                        height: 140,
-                        background: thumbnail ? '#000' : 'var(--accent-soft)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        overflow: 'hidden',
-                      }}>
-                        {thumbnail ? (
-                          <img
-                            src={thumbnail}
-                            alt=""
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }}
-                          />
-                        ) : (
-                          <span style={{
-                            fontFamily: 'var(--font-fraunces)',
-                            fontSize: 56,
-                            fontWeight: 700,
-                            color: 'var(--accent)',
-                            lineHeight: 1,
-                            opacity: .3,
-                            userSelect: 'none',
-                          }}>
-                            {letter}
-                          </span>
-                        )}
-
-                        {/* Remove button — always top-right */}
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(r.id) }}
-                          title="Remove"
-                          style={{
-                            position: 'absolute', top: 10, right: 10, zIndex: 1,
-                            background: 'rgba(255,255,255,.85)', border: 'none',
-                            borderRadius: 99, cursor: 'pointer',
-                            width: 28, height: 28,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'var(--ink)',
-                          }}
-                          className="hover:bg-white transition-colors"
-                        >
-                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                            <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                          </svg>
-                          <span className="sr-only">Remove</span>
-                        </button>
-                      </div>
-
-                      {/* Card body */}
-                      <div style={{ padding: '16px 22px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <p className="font-serif" style={{
-                          fontSize: 19, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
-                          display: '-webkit-box', WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        } as React.CSSProperties}>
-                          {r.title}
-                        </p>
-
-                        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 'auto' }}>
-                          {r.author ? `by ${r.author}` : ''}
-                        </p>
-
-                        {/* Chips */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {time && (
-                            <span style={{ fontSize: 12, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 10px' }}>
-                              ⏱ {time}
-                            </span>
-                          )}
-                          {ingCount !== null && (
-                            <span style={{ fontSize: 12, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 10px' }}>
-                              {ingCount} ingredients
-                            </span>
-                          )}
-                          {r.servings && (
-                            <span style={{ fontSize: 12, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 10px' }}>
-                              serves {r.servings}
-                            </span>
-                          )}
-                        </div>
-
-                        <p style={{ fontSize: 11.5, color: '#B0A499' }}>Saved {formatDate(r.saved_at)}</p>
-                      </div>
-                    </div>
-                  )
-
                   return (
                     <div
                       key={r.id}
                       onClick={() => setActiveRecipe(r)}
                       style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
                     >
-                      {card}
+                      <div style={{
+                        background: 'var(--card)',
+                        border: '1px solid var(--line)',
+                        borderRadius: 18,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                        transition: 'box-shadow .18s, border-color .18s',
+                      }}
+                        className="hover:shadow-md hover:border-[#D4C4B4]"
+                      >
+                        {/* Card image / letter banner */}
+                        <div style={{
+                          position: 'relative', height: 140,
+                          background: thumbnail ? '#000' : 'var(--accent-soft)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          overflow: 'hidden', flexShrink: 0,
+                        }}>
+                          {thumbnail ? (
+                            <img
+                              src={thumbnail} alt=""
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }}
+                            />
+                          ) : (
+                            <span style={{
+                              fontFamily: 'var(--font-fraunces)', fontSize: 60,
+                              fontWeight: 700, color: 'var(--accent)',
+                              lineHeight: 1, opacity: .25, userSelect: 'none',
+                            }}>
+                              {letter}
+                            </span>
+                          )}
+
+                          {/* Remove button */}
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRemoveTarget(r) }}
+                            title="Remove"
+                            style={{
+                              position: 'absolute', top: 10, right: 10, zIndex: 1,
+                              background: 'rgba(255,255,255,.88)', border: 'none',
+                              borderRadius: 99, cursor: 'pointer',
+                              width: 28, height: 28,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: 'var(--ink)',
+                            }}
+                            className="hover:bg-white transition-colors"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                              <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                            <span className="sr-only">Remove</span>
+                          </button>
+                        </div>
+
+                        {/* Card body */}
+                        <div style={{ padding: '16px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <p className="font-serif" style={{
+                            fontSize: 18, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
+                            display: '-webkit-box', WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                          } as React.CSSProperties}>
+                            {r.title}
+                          </p>
+
+                          {r.author && (
+                            <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>by {r.author}</p>
+                          )}
+
+                          {/* Chips */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 'auto', paddingTop: 4 }}>
+                            {time && (
+                              <span style={{ fontSize: 11.5, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 9px' }}>
+                                ⏱ {time}
+                              </span>
+                            )}
+                            {ingCount !== null && (
+                              <span style={{ fontSize: 11.5, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 9px' }}>
+                                {ingCount} ingredients
+                              </span>
+                            )}
+                            {r.servings && (
+                              <span style={{ fontSize: 11.5, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 9px' }}>
+                                serves {r.servings}
+                              </span>
+                            )}
+                          </div>
+
+                          <p style={{ fontSize: 11, color: '#B0A499', marginTop: 4 }}>Saved {formatDate(r.saved_at)}</p>
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
@@ -349,85 +420,117 @@ export default function AccountPage() {
 
         {/* ── Settings tab ─────────────────────────────────────────────── */}
         {tab === 'settings' && (
-          <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-            {/* Row: email (read-only) */}
-            <div style={{ padding: '16px 0', borderBottom: '1px solid var(--line)' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 4 }}>Email</p>
-              <p style={{ fontSize: 15, color: 'var(--ink)' }}>{user.email}</p>
+            {/* Email + sign out */}
+            <div style={{
+              background: 'var(--card)', border: '1px solid var(--line)',
+              borderRadius: 16, padding: '20px 22px',
+            }}>
+              <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 8 }}>
+                Signed in as
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p style={{ fontSize: 15, color: 'var(--ink)', fontWeight: 500, wordBreak: 'break-all' }}>
+                  {user.email}
+                </p>
+                <button
+                  onClick={() => { signOut(); router.replace('/') }}
+                  style={{
+                    padding: '7px 16px', borderRadius: 99, border: '1px solid var(--line)',
+                    background: 'white', fontSize: 13.5, color: 'var(--ink)', fontWeight: 500, cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                  className="hover:bg-bg transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
             </div>
 
-            {/* Row: change password */}
-            <div style={{ padding: '18px 0', borderBottom: '1px solid var(--line)' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 12 }}>Password</p>
-              <form onSubmit={handleChangePassword} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {/* Change password */}
+            <div style={{
+              background: 'var(--card)', border: '1px solid var(--line)',
+              borderRadius: 16, padding: '20px 22px',
+            }}>
+              <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 14 }}>
+                Change password
+              </p>
+              <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <input
-                  type="password" placeholder="New password"
-                  value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  type="password"
+                  placeholder="New password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
                   autoComplete="new-password"
                   style={{
-                    padding: '9px 13px', borderRadius: 10, border: '1px solid var(--line)',
+                    padding: '10px 14px', borderRadius: 10, border: '1px solid var(--line)',
                     fontSize: 14, color: 'var(--ink)', background: 'var(--bg)',
-                    outline: 'none', width: 210,
+                    outline: 'none', width: '100%', boxSizing: 'border-box',
+                    fontFamily: 'inherit',
                   }}
                 />
-                <button type="submit" disabled={pwLoading || !newPassword}
+                <button
+                  type="submit"
+                  disabled={pwLoading || !newPassword}
                   style={{
-                    padding: '9px 18px', borderRadius: 10, border: '1px solid var(--line)',
-                    background: 'white', fontSize: 14, color: 'var(--ink)', fontWeight: 500,
+                    alignSelf: 'flex-start',
+                    padding: '10px 22px', borderRadius: 10, border: 'none',
+                    background: 'var(--accent)', color: 'white', fontSize: 14, fontWeight: 600,
                     cursor: pwLoading || !newPassword ? 'not-allowed' : 'pointer',
                     opacity: pwLoading || !newPassword ? 0.45 : 1,
-                  }}>
-                  {pwLoading ? 'Saving…' : 'Update'}
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {pwLoading ? 'Saving…' : 'Update password'}
                 </button>
               </form>
-              {pwError   && <p style={{ fontSize: 13, color: '#C0392B', marginTop: 8 }}>{pwError}</p>}
-              {pwSuccess && <p style={{ fontSize: 13, color: 'var(--green)', marginTop: 8 }}>Password updated.</p>}
+              {pwError   && <p style={{ fontSize: 13, color: '#C0392B', marginTop: 10 }}>{pwError}</p>}
+              {pwSuccess && <p style={{ fontSize: 13, color: 'var(--green)', marginTop: 10 }}>Password updated.</p>}
             </div>
 
-            {/* Row: sign out */}
-            <div style={{ padding: '18px 0', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--muted)', marginBottom: 3 }}>Session</p>
-                <p style={{ fontSize: 14, color: 'var(--ink)' }}>Signed in as {user.email}</p>
-              </div>
-              <button onClick={() => { signOut(); router.replace('/') }}
-                style={{
-                  padding: '8px 18px', borderRadius: 99, border: '1px solid var(--line)',
-                  background: 'white', fontSize: 14, color: 'var(--ink)', fontWeight: 500, cursor: 'pointer',
-                }}
-                className="hover:bg-bg transition-colors">
-                Sign out
-              </button>
-            </div>
-
-            {/* Row: delete */}
-            <div style={{ padding: '18px 0' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#C0392B', marginBottom: 3 }}>Danger zone</p>
-              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>Permanently deletes your account and all saved recipes.</p>
+            {/* Danger zone */}
+            <div style={{
+              background: '#FDF2F0', border: '1px solid #F0D5D0',
+              borderRadius: 16, padding: '20px 22px',
+            }}>
+              <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#C0392B', marginBottom: 6 }}>
+                Danger zone
+              </p>
+              <p style={{ fontSize: 13.5, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
+                Permanently deletes your account and all saved recipes. This cannot be undone.
+              </p>
               {!deleteConfirm ? (
-                <button onClick={() => setDeleteConfirm(true)}
+                <button
+                  onClick={() => setDeleteConfirm(true)}
                   style={{
                     padding: '8px 18px', borderRadius: 99, border: '1px solid #F0D5D0',
-                    background: '#FDF2F0', fontSize: 14, color: '#C0392B', fontWeight: 500, cursor: 'pointer',
-                  }}>
+                    background: 'white', fontSize: 14, color: '#C0392B', fontWeight: 500, cursor: 'pointer',
+                  }}
+                >
                   Delete account
                 </button>
               ) : (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button onClick={handleDeleteAccount} disabled={deleteLoading}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteLoading}
                     style={{
                       padding: '8px 18px', borderRadius: 99, border: 'none',
                       background: '#C0392B', color: 'white', fontSize: 14, fontWeight: 500,
-                      cursor: deleteLoading ? 'not-allowed' : 'pointer', opacity: deleteLoading ? 0.7 : 1,
-                    }}>
+                      cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                      opacity: deleteLoading ? 0.7 : 1,
+                    }}
+                  >
                     {deleteLoading ? 'Deleting…' : 'Yes, delete everything'}
                   </button>
-                  <button onClick={() => setDeleteConfirm(false)}
+                  <button
+                    onClick={() => setDeleteConfirm(false)}
                     style={{
                       padding: '8px 16px', borderRadius: 99, border: '1px solid var(--line)',
                       background: 'white', fontSize: 14, cursor: 'pointer', color: 'var(--ink)',
-                    }}>
+                    }}
+                  >
                     Cancel
                   </button>
                 </div>
@@ -438,6 +541,57 @@ export default function AccountPage() {
         )}
 
       </main>
+
+      {/* ── Remove confirmation modal ──────────────────────────────────── */}
+      {removeTarget && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center px-5"
+          style={{ background: 'rgba(20,17,14,.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => !removeLoading && setRemoveTarget(null)}
+        >
+          <div
+            style={{
+              background: 'var(--card)', border: '1px solid var(--line)',
+              borderRadius: 20, padding: '36px 32px', maxWidth: 400, width: '100%',
+              boxShadow: '0 24px 60px -16px rgba(30,27,24,.3)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-serif font-semibold text-ink" style={{ fontSize: 20, marginBottom: 10 }}>
+              Remove this recipe?
+            </p>
+            <p style={{ fontSize: 14.5, color: 'var(--muted)', lineHeight: 1.65, marginBottom: 28 }}>
+              <b className="text-ink font-semibold">{removeTarget.title}</b> will be removed from your saved recipes.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={confirmRemove}
+                disabled={removeLoading}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 10, border: 'none',
+                  background: 'var(--ink)', color: 'white', fontSize: 14, fontWeight: 600,
+                  cursor: removeLoading ? 'not-allowed' : 'pointer',
+                  opacity: removeLoading ? 0.6 : 1, fontFamily: 'inherit',
+                }}
+              >
+                {removeLoading ? 'Removing…' : 'Yes, remove it'}
+              </button>
+              <button
+                onClick={() => setRemoveTarget(null)}
+                disabled={removeLoading}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 10,
+                  border: '1px solid var(--line)', background: 'white',
+                  fontSize: 14, color: 'var(--ink)', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+                className="hover:bg-bg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Recipe modal ───────────────────────────────────────────────── */}
       {activeRecipe && (
@@ -450,7 +604,6 @@ export default function AccountPage() {
             style={{ maxWidth: 1060, margin: '0 auto', position: 'relative' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
             <button
               onClick={() => setActiveRecipe(null)}
               aria-label="Close"
