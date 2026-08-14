@@ -86,10 +86,54 @@ export function parseYtInitialPlayerResponse(html: string): YtVideoDetails | nul
   return { title, shortDescription, author: author ?? 'YouTube' }
 }
 
-// ─── Orchestrator ─────────────────────────────────────────────────────────────
+// ─── YouTube Data API v3 ──────────────────────────────────────────────────────
+
+function getYouTubeVideoId(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.replace(/^www\./, '')
+    if (host === 'youtube.com' && u.pathname === '/watch') return u.searchParams.get('v')
+    if (host === 'youtu.be') return u.pathname.slice(1) || null
+    return null
+  } catch {
+    return null
+  }
+}
 
 /**
- * Full YouTube extraction pipeline:
+ * Fetches video title + description via the YouTube Data API v3.
+ * Requires YOUTUBE_API_KEY env var. Returns null if key is absent or
+ * the video has no usable description.
+ */
+export async function extractFromYouTubeAPI(sourceUrl: string): Promise<RecipeData | null> {
+  const apiKey = process.env.YOUTUBE_API_KEY
+  if (!apiKey) return null
+
+  const videoId = getYouTubeVideoId(sourceUrl)
+  if (!videoId) return null
+
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(videoId)}&key=${encodeURIComponent(apiKey)}`
+  )
+  if (!res.ok) return null
+
+  const data = await res.json() as {
+    items?: Array<{ snippet: { title: string; description: string; channelTitle: string } }>
+  }
+
+  const item = data.items?.[0]
+  if (!item) return null
+
+  const { title, description, channelTitle } = item.snippet
+  if (!description || description.length < 100) return null
+
+  return parseRecipeWithAI({ title, description, author: channelTitle, sourceUrl })
+}
+
+// ─── Orchestrator (HTML scrape path) ──────────────────────────────────────────
+
+/**
+ * Full YouTube extraction pipeline via page HTML:
  * 1. Parse ytInitialPlayerResponse from page HTML
  * 2. Guard: description < 100 chars → return null (no API call)
  * 3. Delegate to AI parser

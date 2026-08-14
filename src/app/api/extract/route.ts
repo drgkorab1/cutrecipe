@@ -3,7 +3,7 @@ import { validateUrl } from '@/lib/ssrf'
 import { extractFromHtml } from '@/lib/extractor'
 import { safeFetch, SSRFError, TRACKING_PARAMS } from '@/lib/fetch'
 import type { RecipeData } from '@/types/recipe'
-import { isYouTubeUrl, extractFromYouTube } from '@/lib/youtube'
+import { isYouTubeUrl, extractFromYouTube, extractFromYouTubeAPI } from '@/lib/youtube'
 import { isTikTokUrl, extractFromTikTok } from '@/lib/tiktok'
 import { generateRecipeSummary, generateNutritionEstimate, parseRecipeWithAI } from '@/lib/ai-parser'
 
@@ -139,6 +139,26 @@ export async function POST(req: NextRequest) {
 
     await enhanceWithAI(tikTokResult.recipe)
     return NextResponse.json(tikTokResult.recipe)
+  }
+
+  // ─── YouTube: use Data API v3 if key is present (bypasses IP blocking) ───────
+  if (isYouTubeUrl(normUrl) && process.env.YOUTUBE_API_KEY) {
+    try {
+      const ytRecipe = await extractFromYouTubeAPI(normUrl)
+      if (ytRecipe) {
+        await enhanceWithAI(ytRecipe)
+        return NextResponse.json(ytRecipe)
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('ANTHROPIC_API_KEY')) {
+        return NextResponse.json(
+          { error: 'Server configuration error: AI key not set.', sourceUrl: normUrl },
+          { status: 503 },
+        )
+      }
+      // API call failed for another reason — fall through to HTML scraping
+    }
   }
 
   // ─── All other URLs: fetch the page then extract ─────────────────────────────
