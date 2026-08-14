@@ -5,6 +5,7 @@ import Footer from '@/components/Footer'
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'How Cut Recipe collects, uses, and protects your data.',
+  alternates: { canonical: 'https://cutrecipe.com/privacy' },
 }
 
 export default function PrivacyPage() {
