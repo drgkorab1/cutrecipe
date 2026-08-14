@@ -254,8 +254,8 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
     >
       {/* ── Attribution strip ──────────────────────────────────────────── */}
       <div
-        className="flex flex-wrap items-center justify-between gap-3"
-        style={{ padding: '14px 26px', background: '#FCF9F5', borderBottom: '1px solid var(--line)' }}
+        className="flex flex-wrap items-center justify-between gap-3 px-4 py-[14px] sm:px-[26px]"
+        style={{ background: '#FCF9F5', borderBottom: '1px solid var(--line)' }}
       >
         <p className="text-[14px] text-muted">
           Recipe by{' '}
@@ -276,7 +276,7 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
       </div>
 
       {/* ── Card body ──────────────────────────────────────────────────── */}
-      <div style={{ padding: '30px 34px 36px' }}>
+      <div className="px-4 pt-[26px] pb-9 sm:px-[34px] sm:pt-[30px]">
 
         {/* Title + optional YouTube thumbnail + summary */}
         <div className="flex items-start gap-4" style={{ marginBottom: 14 }}>
@@ -291,19 +291,17 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
             </a>
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-4" style={{ marginBottom: summary ? 14 : 0 }}>
-              <h2 className="font-serif font-semibold text-ink"
-                style={{ fontSize: 34, lineHeight: 1.12 }}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4" style={{ marginBottom: summary ? 14 : 0 }}>
+              <h2 className="font-serif font-semibold text-ink min-w-0"
+                style={{ fontSize: 'clamp(22px, 5.5vw, 34px)', lineHeight: 1.12 }}>
                 {title}
               </h2>
               {/* Primary save button */}
               <button
                 onClick={handleSave}
                 disabled={saved || saving}
+                className="flex w-full items-center justify-center sm:w-auto sm:shrink-0"
                 style={{
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
                   gap: 7,
                   padding: '10px 20px',
                   borderRadius: 99,
@@ -315,7 +313,6 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
                   cursor: saved || saving ? 'default' : 'pointer',
                   boxShadow: saved ? 'none' : '0 4px 14px -4px rgba(192,83,42,.5)',
                   transition: 'all .15s',
-                  marginTop: 4,
                 }}
               >
                 {/* star icon */}

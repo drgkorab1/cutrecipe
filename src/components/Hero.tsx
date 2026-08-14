@@ -4,7 +4,7 @@ const SITES = ['Allrecipes', 'BBC Good Food', 'Serious Eats', 'NYT Cooking', 'Bo
 
 export default function Hero() {
   return (
-    <div className="mx-auto max-w-page px-7 py-[78px] pb-[68px] text-center">
+    <div className="mx-auto max-w-page px-5 sm:px-7 py-[50px] pb-[44px] sm:py-[78px] sm:pb-[68px] text-center">
       {/* Pill */}
       <div className="mb-[26px] inline-flex items-center gap-2 rounded-pill bg-accent-soft px-[15px] py-[7px] text-[13px] font-semibold text-accent">
         <span className="inline-block h-[7px] w-[7px] rounded-full bg-accent" />
@@ -14,7 +14,7 @@ export default function Hero() {
       {/* H1 */}
       <h1
         className="mx-auto mb-[18px] font-serif font-semibold text-ink"
-        style={{ fontSize: 56, lineHeight: 1.08, maxWidth: '15ch' }}
+        style={{ fontSize: 'clamp(30px, 8vw, 56px)', lineHeight: 1.08, maxWidth: '15ch' }}
       >
         Paste the link. Get <em className="italic text-accent">just</em> the recipe.
       </h1>
@@ -22,7 +22,7 @@ export default function Hero() {
       {/* Subheading */}
       <p
         className="mx-auto mb-[34px] text-muted"
-        style={{ fontSize: 18, maxWidth: '52ch' }}
+        style={{ fontSize: 'clamp(15px, 4vw, 18px)', maxWidth: '52ch' }}
       >
         No life story, no pop-ups, no scrolling past twelve photos of a kitchen.
         Ingredients and steps, in two seconds.

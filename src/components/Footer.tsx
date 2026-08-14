@@ -69,7 +69,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div
-          className="flex items-center justify-between border-t border-line text-muted"
+          className="flex flex-col gap-1 border-t border-line text-muted sm:flex-row sm:items-center sm:justify-between"
           style={{ paddingTop: 22, fontSize: 13.5 }}
         >
           <span>© {new Date().getFullYear()} Cut Recipe</span>

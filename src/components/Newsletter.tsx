@@ -37,12 +37,11 @@ export default function Newsletter() {
     <section id="newsletter" className="border-t border-line" style={{ padding: '76px 0' }}>
       <div className="mx-auto max-w-page px-7">
         <div
-          className="text-center"
+          className="px-5 py-10 sm:px-11 sm:py-[56px] text-center"
           style={{
             background: 'var(--ink)',
             color: '#F6F1EA',
             borderRadius: 22,
-            padding: '56px 44px',
           }}
         >
           <h2
@@ -67,7 +66,7 @@ export default function Newsletter() {
             <>
               <form
                 onSubmit={handleSubmit}
-                className="mx-auto flex gap-[10px]"
+                className="mx-auto flex flex-col gap-[10px] sm:flex-row"
                 style={{ maxWidth: 460 }}
               >
                 <input

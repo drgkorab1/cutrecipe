@@ -27,13 +27,13 @@ export default function Navbar() {
 
         {/* Links */}
         <div className="flex items-center gap-[30px] text-[14.5px] text-muted">
-          <a href="/" className="text-ink hover:text-ink/70 transition-colors">
+          <a href="/" className="hidden sm:block text-ink hover:text-ink/70 transition-colors">
             Recipe extractor
           </a>
-          <a href="/#cook-from-photo" className="hover:text-ink transition-colors">
+          <a href="/#cook-from-photo" className="hidden sm:block hover:text-ink transition-colors">
             From a photo
           </a>
-          <Link href="/blog" className="hover:text-ink transition-colors">
+          <Link href="/blog" className="hidden sm:block hover:text-ink transition-colors">
             Blog
           </Link>
 

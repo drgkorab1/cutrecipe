@@ -113,14 +113,14 @@ export default function SkeletonCard() {
       >
         {/* Attribution strip */}
         <div
-          className="flex items-center justify-between gap-4"
-          style={{ padding: '16px 26px', background: '#FCF9F5', borderBottom: '1px solid var(--line)' }}
+          className="flex items-center justify-between gap-4 px-4 py-[16px] sm:px-[26px]"
+          style={{ background: '#FCF9F5', borderBottom: '1px solid var(--line)' }}
         >
           <div className="skeleton h-4 w-52 rounded" />
           <div className="skeleton h-4 w-28 rounded" />
         </div>
 
-        <div style={{ padding: '30px 34px 36px' }}>
+        <div className="px-4 pt-[26px] pb-9 sm:px-[34px] sm:pt-[30px]">
           {/* Title */}
           <div className="skeleton mb-2 h-8 w-3/4 rounded" />
           <div className="skeleton mb-6 h-8 w-1/2 rounded" />

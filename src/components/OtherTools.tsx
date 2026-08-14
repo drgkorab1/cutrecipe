@@ -33,7 +33,7 @@ export default function OtherTools() {
             </p>
             <h2
               className="font-serif font-semibold text-ink"
-              style={{ fontSize: 46, lineHeight: 1.08, marginBottom: 20 }}
+              style={{ fontSize: 'clamp(28px, 8vw, 46px)', lineHeight: 1.08, marginBottom: 20 }}
             >
               Cook from<br />a photo
             </h2>
