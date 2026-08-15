@@ -79,6 +79,7 @@ interface ParseInput {
   description: string
   author: string
   sourceUrl: string
+  isTranscript?: boolean
 }
 
 interface ExtractToolInput {
@@ -172,8 +173,16 @@ export async function generateNutritionEstimate(recipe: RecipeData): Promise<Nut
 }
 
 export async function parseRecipeWithAI(input: ParseInput): Promise<RecipeData | null> {
-  const { title, author, sourceUrl } = input
+  const { title, author, sourceUrl, isTranscript = false } = input
   const description = input.description.slice(0, MAX_DESC_CHARS)
+
+  const sourceLabel = isTranscript ? 'Transcript' : 'Description'
+  const instruction = isTranscript
+    ? 'This is a spoken transcript from a cooking video — expect conversational language and no punctuation. ' +
+      'If it contains a recipe with ingredients and steps, call extract_recipe with the structured data. ' +
+      'If there is no recipe, do not call the tool.'
+    : 'If this description contains a recipe, call extract_recipe with the structured data. ' +
+      'If there is no recipe, do not call the tool.'
 
   const client = getClient()
 
@@ -188,9 +197,8 @@ export async function parseRecipeWithAI(input: ParseInput): Promise<RecipeData |
         content:
           `Video title: ${title}\n` +
           `Channel: ${author}\n\n` +
-          `Description:\n${description}\n\n` +
-          `If this description contains a recipe, call extract_recipe with the structured data. ` +
-          `If there is no recipe, do not call the tool.`,
+          `${sourceLabel}:\n${description}\n\n` +
+          instruction,
       },
     ],
   })

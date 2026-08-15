@@ -1,9 +1,10 @@
 // YouTube recipe extraction — server-side only.
 // Parses ytInitialPlayerResponse from the page HTML, then delegates
-// description parsing to the AI parser.
+// description or transcript parsing to the AI parser.
 
 import type { RecipeData } from '@/types/recipe'
 import { parseRecipeWithAI } from './ai-parser'
+import { YoutubeTranscript } from 'youtube-transcript'
 
 // ─── URL detection ────────────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ interface YtVideoDetails {
 
 /**
  * Extracts videoDetails from the ytInitialPlayerResponse JSON blob that
- * YouTube embeds in every watch page.  Uses a brace-counting approach so
+ * YouTube embeds in every watch page. Uses a brace-counting approach so
  * it works without a full JSON parser on the raw script content (which
  * contains embedded JS that JSON.parse would reject).
  */
@@ -86,6 +87,25 @@ export function parseYtInitialPlayerResponse(html: string): YtVideoDetails | nul
   return { title, shortDescription, author: author ?? 'YouTube' }
 }
 
+// ─── Transcript fetcher ───────────────────────────────────────────────────────
+
+const MAX_TRANSCRIPT_CHARS = 6000
+
+/**
+ * Fetches the transcript for a YouTube video URL using the youtube-transcript
+ * package (Android InnerTube client — works server-side without cookies).
+ * Returns joined plain text capped at MAX_TRANSCRIPT_CHARS, or null on failure.
+ */
+async function fetchTranscriptText(sourceUrl: string): Promise<string | null> {
+  try {
+    const segments = await YoutubeTranscript.fetchTranscript(sourceUrl, { lang: 'en' })
+    if (!segments || segments.length === 0) return null
+    return segments.map(s => s.text).join(' ').slice(0, MAX_TRANSCRIPT_CHARS)
+  } catch {
+    return null
+  }
+}
+
 // ─── YouTube Data API v3 ──────────────────────────────────────────────────────
 
 function getYouTubeVideoId(url: string): string | null {
@@ -135,8 +155,8 @@ export async function extractFromYouTubeAPI(sourceUrl: string): Promise<RecipeDa
 /**
  * Full YouTube extraction pipeline via page HTML:
  * 1. Parse ytInitialPlayerResponse from page HTML
- * 2. Guard: description < 100 chars → return null (no API call)
- * 3. Delegate to AI parser
+ * 2. If description >= 100 chars → send to AI parser
+ * 3. Otherwise fall back to transcript (caption track) if available
  */
 export async function extractFromYouTube(
   html: string,
@@ -147,7 +167,15 @@ export async function extractFromYouTube(
 
   const { title, shortDescription, author } = details
 
-  if (shortDescription.length < 100) return null
+  if (shortDescription.length >= 100) {
+    const result = await parseRecipeWithAI({ title, description: shortDescription, author, sourceUrl })
+    if (result) return result
+    // Description had no recipe — fall through to transcript
+  }
 
-  return parseRecipeWithAI({ title, description: shortDescription, author, sourceUrl })
+  // Description absent, short, or contained no recipe — try the video transcript instead
+  const transcript = await fetchTranscriptText(sourceUrl)
+  if (!transcript || transcript.length < 100) return null
+
+  return parseRecipeWithAI({ title, description: transcript, author, sourceUrl, isTranscript: true })
 }
