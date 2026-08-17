@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Clock, Users, List, ChefHat, ShoppingCart, BarChart2, Ruler } from 'lucide-react'
 import type { RecipeData } from '@/types/recipe'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -138,6 +139,8 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
   const [checked, setChecked] = useState<Set<number>>(new Set())
   const [stepsChecked, setStepsChecked] = useState<Set<number>>(new Set())
   const [shared, setShared] = useState(false)
+  const [shareError, setShareError] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const [useMetric, setUseMetric] = useState(false)
   const [openPanel, setOpenPanel] = useState<'shopping' | 'nutrition' | null>(null)
   const [copiedList, setCopiedList] = useState(false)
@@ -184,10 +187,28 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
     })
   }
 
-  function handleShare() {
-    navigator.clipboard?.writeText(window.location.href)
-    setShared(true)
-    setTimeout(() => setShared(false), 2000)
+  async function handleShare() {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      const json = await res.json()
+      if (!json.slug) {
+        setShareError(true)
+        setTimeout(() => setShareError(false), 2500)
+        return
+      }
+      const shareUrl = `${window.location.origin}/shared/${json.slug}`
+      await navigator.clipboard?.writeText(shareUrl)
+      setShared(true)
+      setTimeout(() => setShared(false), 2500)
+    } finally {
+      setSharing(false)
+    }
   }
 
   function togglePanel(panel: 'shopping' | 'nutrition') {
@@ -233,13 +254,14 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
   const shoppingItems = ingredients.filter((_, i) => checked.size === 0 || !checked.has(i))
 
   // Shared pill style helper
-  const pillBase = 'flex cursor-pointer items-center gap-[7px] border px-[14px] py-[7px] text-[13.5px] transition-colors'
+  const pillBase = 'flex cursor-pointer items-center gap-[7px] border px-[14px] py-[7px] text-[13.5px] transition-all active:scale-[0.97]'
   const pillInactive = 'border-line bg-white text-muted hover:border-ink/30 hover:text-ink'
+  const pillAccentBorder = 'border-accent/40 bg-white text-muted hover:bg-accent-soft hover:text-accent hover:border-accent/60'
 
-  function pillActive(active: boolean) {
+  function pillActive(active: boolean, inactive = pillInactive) {
     return active
       ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
-      : pillInactive
+      : inactive
   }
 
   return (
@@ -279,14 +301,14 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
       <div className="px-4 pt-[26px] pb-9 sm:px-[34px] sm:pt-[30px]">
 
         {/* Title + optional YouTube thumbnail + summary */}
-        <div className="flex items-start gap-4" style={{ marginBottom: 14 }}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4" style={{ marginBottom: 14 }}>
           {thumbnail && (
-            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 mt-1">
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="sm:shrink-0 sm:mt-1">
               <img
                 src={thumbnail}
                 alt={`${title} video thumbnail`}
-                className="rounded-xl object-cover"
-                style={{ width: 140, height: 80 }}
+                className="rounded-xl object-cover w-full h-[180px] sm:w-[250px] sm:h-[150px]"
+                style={{ border: '1px solid rgba(192,83,42,.35)' }}
               />
             </a>
           )}
@@ -336,112 +358,145 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
         </div>
 
         {/* Meta row */}
+        <div className="flex flex-col mb-8 sm:mb-5" style={{ gap: 8, marginTop: 22 }}>
+        <span className="font-sans font-bold uppercase tracking-[.1em] text-accent" style={{ fontSize: 11 }}>Overview</span>
         <div className="flex flex-wrap items-center text-muted"
-          style={{ gap: 20, fontSize: 14.5, marginBottom: 22 }}>
+          style={{ gap: 20, fontSize: 14.5 }}>
           {totalMinutes != null && (
-            <span className="flex items-center gap-[6px]">⏱ {formatMinutes(totalMinutes)} total</span>
+            <span className="flex items-center gap-[6px]"><Clock size={14} strokeWidth={1.75} />{formatMinutes(totalMinutes)} total</span>
           )}
           {servings && (
-            <span className="flex items-center gap-[6px]">🍽 Serves {servingCount}</span>
+            <span className="flex items-center gap-[6px]"><Users size={14} strokeWidth={1.75} />Serves {servingCount}</span>
           )}
           {ingredients.length > 0 && (
-            <span className="flex items-center gap-[6px]">📋 {ingredients.length} ingredients</span>
+            <span className="flex items-center gap-[6px]"><List size={14} strokeWidth={1.75} />{ingredients.length} ingredients</span>
           )}
           {steps.length > 0 && (
-            <span className="flex items-center gap-[6px]">🥄 {steps.length} steps</span>
+            <span className="flex items-center gap-[6px]"><ChefHat size={14} strokeWidth={1.75} />{steps.length} steps</span>
           )}
         </div>
+        </div>
 
-        {/* Tool row */}
-        <div className="flex flex-wrap items-center" style={{ gap: 8, paddingBottom: 20 }}>
+        {/* Tool row — left: recipe actions · right: utilities */}
+        <div className="flex flex-wrap items-start justify-between gap-y-6 gap-x-3 sm:gap-y-3 sm:gap-x-3" style={{ paddingBottom: 20 }}>
 
-          {/* Serving stepper */}
-          <div className="flex items-center overflow-hidden border border-line bg-white"
-            style={{ borderRadius: 99 }}>
+          {/* Left group: serving + shopping + nutrition */}
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            <span className="font-sans font-bold uppercase tracking-[.1em] text-accent" style={{ fontSize: 11 }}>Make it yours</span>
+          <div className="flex flex-wrap items-center" style={{ gap: 8 }}>
+            <div className="flex items-center overflow-hidden border border-accent/40 bg-white"
+              style={{ borderRadius: 99 }}>
+              <button
+                onClick={() => setServingCount((n) => Math.max(1, n - 1))}
+                className="cursor-pointer border-0 bg-transparent px-[13px] py-[7px] text-[15px] text-accent/70 transition-all hover:text-accent active:scale-90"
+                aria-label="Decrease servings"
+              >−</button>
+              <span className="px-[6px] text-[13.5px] text-muted">{servingsLabel}</span>
+              <button
+                onClick={() => setServingCount((n) => n + 1)}
+                className="cursor-pointer border-0 bg-transparent px-[13px] py-[7px] text-[15px] text-accent/70 transition-all hover:text-accent active:scale-90"
+                aria-label="Increase servings"
+              >+</button>
+            </div>
+
             <button
-              onClick={() => setServingCount((n) => Math.max(1, n - 1))}
-              className="cursor-pointer border-0 bg-transparent px-[13px] py-[7px] text-[15px] text-muted transition-colors hover:text-ink"
-              aria-label="Decrease servings"
-            >−</button>
-            <span className="px-[6px] text-[13.5px] text-ink">{servingsLabel}</span>
+              onClick={() => togglePanel('shopping')}
+              className={`${pillBase} ${pillActive(openPanel === 'shopping', pillAccentBorder)}`}
+              style={{ borderRadius: 99 }}
+            >
+              <ShoppingCart size={13} strokeWidth={1.75} className="text-accent/70" />Shopping list
+            </button>
+
             <button
-              onClick={() => setServingCount((n) => n + 1)}
-              className="cursor-pointer border-0 bg-transparent px-[13px] py-[7px] text-[15px] text-muted transition-colors hover:text-ink"
-              aria-label="Increase servings"
-            >+</button>
+              onClick={() => togglePanel('nutrition')}
+              className={`${pillBase} ${pillActive(openPanel === 'nutrition', pillAccentBorder)}`}
+              style={{ borderRadius: 99 }}
+            >
+              <BarChart2 size={13} strokeWidth={1.75} className="text-accent/70" />Nutrition
+            </button>
+          </div>
           </div>
 
-          {/* Metric / Imperial toggle — label shows current mode, click switches */}
-          <button
-            onClick={() => setUseMetric((v) => !v)}
-            className={`${pillBase} ${pillActive(useMetric)}`}
-            style={{ borderRadius: 99 }}
-            aria-pressed={useMetric}
-          >
-            {useMetric ? 'Metric' : 'Imperial'}
-          </button>
+          {/* Right group: imperial + print + share */}
+          <div className="flex flex-col items-start" style={{ gap: 8 }}>
+            <span className="font-sans font-bold uppercase tracking-[.1em] text-accent" style={{ fontSize: 11 }}>Export</span>
+          <div className="flex flex-wrap items-center" style={{ gap: 8 }}>
+            <button
+              onClick={() => setUseMetric((v) => !v)}
+              className={`${pillBase} ${pillActive(useMetric, pillAccentBorder)} justify-center`}
+              style={{ borderRadius: 99, minWidth: 108 }}
+              aria-pressed={useMetric}
+            >
+              <Ruler size={13} strokeWidth={1.75} className="text-accent/70" />{useMetric ? 'Metric' : 'Imperial'}
+            </button>
 
-          {/* Shopping list toggle */}
-          <button
-            onClick={() => togglePanel('shopping')}
-            className={`${pillBase} ${pillActive(openPanel === 'shopping')}`}
-            style={{ borderRadius: 99 }}
-          >
-            📋 Shopping list
-          </button>
+            <button onClick={() => window.print()}
+              className={`${pillBase} ${pillAccentBorder}`}
+              style={{ borderRadius: 99 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-accent/70">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              Print
+            </button>
 
-          {/* Nutrition toggle */}
-          <button
-            onClick={() => togglePanel('nutrition')}
-            className={`${pillBase} ${pillActive(openPanel === 'nutrition')}`}
-            style={{ borderRadius: 99 }}
-          >
-            📊 Nutrition
-          </button>
+            <button onClick={handleShare} disabled={sharing}
+              className={`${pillBase} ${shareError ? 'border-red-300 bg-red-50 text-red-500' : pillAccentBorder}`}
+              style={{ borderRadius: 99 }}>
+              {shared ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Link copied!
+                </>
+              ) : shareError ? (
+                'Failed — run SQL migration'
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-accent/70">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  </svg>
+                  {sharing ? 'Sharing…' : 'Share'}
+                </>
+              )}
+            </button>
 
-          <button onClick={() => window.print()}
-            className={`${pillBase} ${pillInactive}`}
-            style={{ borderRadius: 99 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="6 9 6 2 18 2 18 9"/>
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-              <rect x="6" y="14" width="12" height="8"/>
-            </svg>
-            Print
-          </button>
-          <button onClick={handleShare}
-            className={`${pillBase} ${pillInactive}`}
-            style={{ borderRadius: 99 }}>
-            {shared ? (
-              <>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Copied!
-              </>
-            ) : (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                </svg>
-                Share
-              </>
-            )}
-          </button>
+          </div>
+          </div>
         </div>
 
         {/* ── Expandable panels (below tool row, above columns) ─────────── */}
         {openPanel === 'shopping' && (
           <div className="rounded-xl" style={{ background: '#FAF7F3', padding: '16px 20px', marginBottom: 24, border: '1px solid var(--line)' }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
+            <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
               <span className="font-semibold text-ink" style={{ fontSize: 14 }}>Shopping list</span>
               <button
                 onClick={handleCopyList}
-                className="cursor-pointer border-0 bg-transparent p-0 transition-colors hover:text-ink"
-                style={{ fontSize: 13, color: 'var(--muted)' }}
+                className="flex cursor-pointer items-center gap-[5px] transition-colors"
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  padding: '4px 10px',
+                  borderRadius: 99,
+                  border: '1px solid var(--line)',
+                  background: copiedList ? 'var(--accent-soft)' : 'white',
+                  color: copiedList ? 'var(--accent)' : 'var(--muted)',
+                }}
               >
-                {copiedList ? '✓ Copied' : 'Copy'}
+                {copiedList ? (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy list
+                  </>
+                )}
               </button>
             </div>
             <ul className="list-none" style={{ margin: 0, padding: 0 }}>

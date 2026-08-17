@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { List, Search, Bookmark, Globe, ChefHat } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
@@ -117,6 +118,11 @@ export default function AccountPage() {
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
+  function getDomain(url: string | null): string | null {
+    if (!url) return null
+    try { return new URL(url).hostname.replace(/^www\./, '') } catch { return null }
+  }
+
   const chipStyle: React.CSSProperties = {
     fontSize: 12.5, color: 'var(--muted)',
     background: 'rgba(255,255,255,.75)',
@@ -124,6 +130,9 @@ export default function AccountPage() {
     borderRadius: 99,
     padding: '4px 12px',
     whiteSpace: 'nowrap',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
   }
 
   const saveRate = extractionCount >= recipes.length && extractionCount > 0 && recipes.length > 0
@@ -222,12 +231,12 @@ export default function AccountPage() {
               style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(192,83,42,.12)' }}
             >
               {extractionCount >= recipes.length && extractionCount > 0 && (
-                <span style={chipStyle}>🔍 {extractionCount} {extractionCount === 1 ? 'recipe' : 'recipes'} explored</span>
+                <span style={chipStyle}><Search size={11} strokeWidth={2} className="text-accent/60" />{extractionCount} {extractionCount === 1 ? 'recipe' : 'recipes'} explored</span>
               )}
               {saveRate !== null && (
-                <span style={chipStyle}>📖 {saveRate}% save rate</span>
+                <span style={chipStyle}><Bookmark size={11} strokeWidth={2} className="text-accent/60" />{saveRate}% save rate</span>
               )}
-              {topDomain && <span style={chipStyle}>🌐 Often from {topDomain}</span>}
+              {topDomain && <span style={chipStyle}><Globe size={11} strokeWidth={2} className="text-accent/60" />Often from {topDomain}</span>}
             </div>
           )}
         </div>
@@ -285,7 +294,9 @@ export default function AccountPage() {
               </div>
             ) : recipes.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '72px 24px' }}>
-                <p style={{ fontSize: 44, marginBottom: 16 }}>📖</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                  <ChefHat size={48} strokeWidth={1.25} style={{ color: 'var(--accent)', opacity: .4 }} />
+                </div>
                 <p className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: 'var(--ink)', marginBottom: 10 }}>
                   Your cookbook is empty
                 </p>
@@ -303,13 +314,10 @@ export default function AccountPage() {
                 </Link>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
                 {recipes.map((r) => {
-                  const mins = r.total_minutes
-                  const time = mins
-                    ? mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ''}`
-                    : null
                   const ingCount = r.ingredients?.length ?? null
+                  const stepsCount = r.steps?.length ?? null
                   const letter = r.title[0]?.toUpperCase() ?? '?'
                   const thumbnail = getYouTubeThumbnail(r.source_url)
 
@@ -317,99 +325,91 @@ export default function AccountPage() {
                     <div
                       key={r.id}
                       onClick={() => setActiveRecipe(r)}
-                      style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card transition-all hover:border-[#D4C4B4] hover:shadow-md"
+                      style={{ cursor: 'pointer' }}
                     >
+                      {/* Header image / letter banner */}
                       <div style={{
-                        background: 'var(--card)',
-                        border: '1px solid var(--line)',
-                        borderRadius: 18,
+                        position: 'relative', height: 130, flexShrink: 0,
+                        background: thumbnail ? '#000' : 'var(--accent-soft)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                         overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                        transition: 'box-shadow .18s, border-color .18s',
-                      }}
-                        className="hover:shadow-md hover:border-[#D4C4B4]"
-                      >
-                        {/* Card image / letter banner */}
-                        <div style={{
-                          position: 'relative', height: 140,
-                          background: thumbnail ? '#000' : 'var(--accent-soft)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          overflow: 'hidden', flexShrink: 0,
-                        }}>
-                          {thumbnail ? (
-                            <img
-                              src={thumbnail} alt=""
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }}
-                            />
-                          ) : (
-                            <span style={{
-                              fontFamily: 'var(--font-fraunces)', fontSize: 60,
-                              fontWeight: 700, color: 'var(--accent)',
-                              lineHeight: 1, opacity: .25, userSelect: 'none',
-                            }}>
-                              {letter}
-                            </span>
-                          )}
+                      }}>
+                        {thumbnail ? (
+                          <img
+                            src={thumbnail} alt=""
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .9 }}
+                          />
+                        ) : (
+                          <span style={{
+                            fontFamily: 'var(--font-fraunces)', fontSize: 64,
+                            fontWeight: 700, color: 'var(--accent)',
+                            lineHeight: 1, opacity: .2, userSelect: 'none',
+                          }}>
+                            {letter}
+                          </span>
+                        )}
 
-                          {/* Remove button */}
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRemoveTarget(r) }}
-                            title="Remove"
+                        {/* Remove — visible on hover */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setRemoveTarget(r) }}
+                          className="absolute right-2.5 top-2.5 flex items-center justify-center rounded-full border border-white/40 bg-white/80 text-muted opacity-0 backdrop-blur-sm transition-all hover:bg-white hover:text-red-400 group-hover:opacity-100"
+                          style={{ width: 28, height: 28, cursor: 'pointer' }}
+                        >
+                          <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                            <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
+                          <span className="sr-only">Remove</span>
+                        </button>
+                      </div>
+
+                      {/* Card body */}
+                      <div className="flex flex-col gap-3 p-5">
+
+                        {/* Title + author */}
+                        <div style={{ minHeight: 58 }}>
+                          <p
+                            className="font-serif font-semibold text-ink"
                             style={{
-                              position: 'absolute', top: 10, right: 10, zIndex: 1,
-                              background: 'rgba(255,255,255,.88)', border: 'none',
-                              borderRadius: 99, cursor: 'pointer',
-                              width: 28, height: 28,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: 'var(--ink)',
-                            }}
-                            className="hover:bg-white transition-colors"
+                              fontSize: 18, lineHeight: 1.3,
+                              display: '-webkit-box', WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                            } as React.CSSProperties}
                           >
-                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                              <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                            </svg>
-                            <span className="sr-only">Remove</span>
-                          </button>
-                        </div>
-
-                        {/* Card body */}
-                        <div style={{ padding: '16px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <p className="font-serif" style={{
-                            fontSize: 18, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3,
-                            display: '-webkit-box', WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                          } as React.CSSProperties}>
                             {r.title}
                           </p>
-
-                          {r.author && (
-                            <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>by {r.author}</p>
-                          )}
-
-                          {/* Chips */}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 'auto', paddingTop: 4 }}>
-                            {time && (
-                              <span style={{ fontSize: 11.5, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 9px' }}>
-                                ⏱ {time}
-                              </span>
-                            )}
-                            {ingCount !== null && (
-                              <span style={{ fontSize: 11.5, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 9px' }}>
-                                {ingCount} ingredients
-                              </span>
-                            )}
-                            {r.servings && (
-                              <span style={{ fontSize: 11.5, color: 'var(--muted)', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 99, padding: '3px 9px' }}>
-                                serves {r.servings}
-                              </span>
-                            )}
-                          </div>
-
-                          <p style={{ fontSize: 11, color: '#B0A499', marginTop: 4 }}>Saved {formatDate(r.saved_at)}</p>
+                          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>
+                            by <span className="text-accent/70">{r.author ?? getDomain(r.source_url) ?? '—'}</span>
+                          </p>
                         </div>
+
+                      {/* Meta row */}
+                      {(ingCount !== null || stepsCount !== null) && (
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+                          {ingCount !== null && (
+                            <span className="flex items-center gap-1">
+                              <List size={12} strokeWidth={1.75} className="text-accent/60" />{ingCount} ingredients
+                            </span>
+                          )}
+                          {stepsCount !== null && (
+                            <span className="flex items-center gap-1">
+                              <ChefHat size={12} strokeWidth={1.75} className="text-accent/60" />{stepsCount} steps
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Footer */}
+                      <div className="mt-auto flex items-center justify-between pt-1">
+                        <span style={{ fontSize: 11, color: '#B0A499' }}>Saved {formatDate(r.saved_at)}</span>
+                        <span
+                          className="font-semibold text-accent opacity-0 transition-opacity group-hover:opacity-100"
+                          style={{ fontSize: 12 }}
+                        >
+                          Open →
+                        </span>
                       </div>
+                      </div>{/* end card body */}
                     </div>
                   )
                 })}

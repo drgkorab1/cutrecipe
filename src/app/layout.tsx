@@ -16,6 +16,10 @@ const BASE_URL = 'https://cutrecipe.com'
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
 
+  icons: {
+    icon: '/favicon.png',
+  },
+
   title: {
     default: 'Cut Recipe — Skip the Story, Get Just the Recipe',
     template: '%s | Cut Recipe',

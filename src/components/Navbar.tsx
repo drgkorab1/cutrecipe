@@ -30,8 +30,11 @@ export default function Navbar() {
           <a href="/" className="hidden sm:block text-ink hover:text-ink/70 transition-colors">
             Recipe extractor
           </a>
-          <a href="/#cook-from-photo" className="hidden sm:block hover:text-ink transition-colors">
+          <a href="/#cook-from-photo" className="hidden sm:flex items-center gap-1.5 hover:text-ink transition-colors">
             From a photo
+            <span className="rounded-full bg-accent-soft px-2 py-px text-[10px] font-semibold text-accent" style={{ lineHeight: '16px' }}>
+              Soon
+            </span>
           </a>
           <Link href="/blog" className="hidden sm:block hover:text-ink transition-colors">
             Blog

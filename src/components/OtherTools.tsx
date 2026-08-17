@@ -1,20 +1,23 @@
+import { Camera, Brain, ChefHat } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
 // What's on the horizon — §4.5
-const STEPS = [
+const STEPS: { n: number; icon: LucideIcon; title: string; description: string }[] = [
   {
     n: 1,
-    emoji: '📸',
+    icon: Camera,
     title: 'Snap your fridge',
     description: 'Take a photo of whatever you have — no tidying required.',
   },
   {
     n: 2,
-    emoji: '🧠',
+    icon: Brain,
     title: 'We read the ingredients',
     description: 'We identify what you have and figure out what you can make tonight.',
   },
   {
     n: 3,
-    emoji: '🍳',
+    icon: ChefHat,
     title: 'Get recipes for tonight',
     description: 'Real recipes matched to your ingredients, ready in seconds.',
   },
@@ -33,17 +36,17 @@ export default function OtherTools() {
             </p>
             <h2
               className="font-serif font-semibold text-ink"
-              style={{ fontSize: 'clamp(28px, 8vw, 46px)', lineHeight: 1.08, marginBottom: 20 }}
+              style={{ fontSize: 'clamp(28px, 8vw, 46px)', lineHeight: 1.08, marginBottom: 14 }}
             >
               Cook from<br />a photo
             </h2>
-            <p className="text-muted" style={{ fontSize: 17, lineHeight: 1.7, maxWidth: '36ch', marginBottom: 36 }}>
-              Snap your fridge or pantry. We figure out what you can make tonight — no typing, no searching, no waste.
-            </p>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-pill bg-accent-soft px-[15px] py-[7px] text-[13px] font-semibold text-accent">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-pill bg-accent-soft px-[15px] py-[7px] text-[13px] font-semibold text-accent">
               <span className="inline-block h-[7px] w-[7px] rounded-full bg-accent" />
               Coming soon
             </div>
+            <p className="text-muted" style={{ fontSize: 17, lineHeight: 1.7, maxWidth: '36ch', marginBottom: 36 }}>
+              Snap your fridge or pantry. We figure out what you can make tonight — no typing, no searching, no waste.
+            </p>
             <div>
               <a
                 href="#newsletter"
@@ -77,10 +80,11 @@ export default function OtherTools() {
                 {/* Text */}
                 <div style={{ paddingBottom: i < STEPS.length - 1 ? 32 : 0, paddingTop: 4 }}>
                   <p
-                    className="font-serif font-semibold text-ink"
+                    className="flex items-center gap-2 font-serif font-semibold text-ink"
                     style={{ fontSize: 19, marginBottom: 6 }}
                   >
-                    {step.emoji} {step.title}
+                    <step.icon size={26} strokeWidth={1.5} className="text-accent/60 shrink-0" />
+                    {step.title}
                   </p>
                   <p className="text-muted" style={{ fontSize: 15, lineHeight: 1.65 }}>
                     {step.description}
