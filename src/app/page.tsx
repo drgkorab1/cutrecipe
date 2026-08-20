@@ -2,15 +2,18 @@ import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 
 export const metadata: Metadata = {
-  title: 'Cut Recipe — Skip the Story, Get Just the Recipe',
+  title: 'Free Recipe Extractor — YouTube, TikTok & Instagram | Cut Recipe',
   description:
-    'Paste any recipe link and get just the ingredients and steps in seconds. ' +
-    'Works with YouTube, TikTok, and any recipe website. No life stories, no ads.',
+    'Free online recipe extractor and parser. Paste any YouTube video, TikTok, ' +
+    'Instagram reel or recipe site link — get just the ingredients and steps. ' +
+    'No sign-up, no ads, no life stories.',
   alternates: { canonical: 'https://cutrecipe.com' },
   openGraph: {
     url: 'https://cutrecipe.com',
-    title: 'Cut Recipe — Skip the Story, Get Just the Recipe',
-    description: 'Paste any recipe link. Get just the ingredients and steps.',
+    title: 'Free Recipe Extractor — YouTube, TikTok & Instagram | Cut Recipe',
+    description:
+      'Free recipe extractor and parser. Paste any YouTube, TikTok or Instagram link — ' +
+      'get just the ingredients and steps. No sign-up, no ads.',
   },
 }
 import Hero from '@/components/Hero'

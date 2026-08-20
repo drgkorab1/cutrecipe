@@ -96,11 +96,14 @@ export default function RecipeForm() {
           setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
           return
         }
-        // TikTok-specific: if the server returned a meaningful caption, pre-fill text mode.
-        // Skip auto-switching for short/hashtag-only captions — not helpful to the user.
-        if (data.caption && data.caption.length > 80 && mode === 'url') {
-          setText(data.caption)
-          setMode('text')
+        // TikTok video: if the server returned a meaningful caption, auto-submit it
+        // as text so the user gets the recipe without any manual steps.
+        // Skip for photo posts — the caption was already tried server-side and failed;
+        // the recipe lives in the slide images, so re-submitting won't help.
+        const isPhotoPost = /\/photo\/\d+/.test(body.url ?? '')
+        if (!isPhotoPost && data.caption && data.caption.length > 80 && mode === 'url') {
+          await runExtract({ text: data.caption })
+          return
         }
         setState({
           status: 'error',

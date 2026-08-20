@@ -129,7 +129,7 @@ function getYouTubeThumbnail(url: string): string | null {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function RecipeCard({ data }: { data: RecipeData }) {
-  const { title, author, authorUrl, sourceUrl, ingredients, steps, totalMinutes, servings, summary, nutrition } = data
+  const { title, author, authorUrl, sourceUrl, coverUrl, ingredients, steps, totalMinutes, servings, summary, nutrition } = data
 
   const { user, openAuthModal } = useAuth()
   const supabase = createClient()
@@ -160,7 +160,7 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
       .then(({ data }) => { if (data) setSaved(true) })
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const thumbnail = getYouTubeThumbnail(sourceUrl)
+  const thumbnail = getYouTubeThumbnail(sourceUrl) ?? coverUrl ?? null
   const ratio = servingCount / originalServings
   const authorName = author ?? 'the original author'
   const servingsLabel = servingCount === 1 ? '1 serving' : `${servingCount} servings`
@@ -228,6 +228,7 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
       title,
       author: author ?? null,
       source_url: sourceUrl,
+      cover_url: coverUrl ?? null,
       ingredients: ingredients,
       steps: steps,
       total_minutes: totalMinutes ?? null,
@@ -306,7 +307,7 @@ export default function RecipeCard({ data }: { data: RecipeData }) {
             <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="sm:shrink-0 sm:mt-1">
               <img
                 src={thumbnail}
-                alt={`${title} video thumbnail`}
+                alt={title}
                 className="rounded-xl object-cover w-full h-[180px] sm:w-[250px] sm:h-[150px]"
                 style={{ border: '1px solid rgba(192,83,42,.35)' }}
               />

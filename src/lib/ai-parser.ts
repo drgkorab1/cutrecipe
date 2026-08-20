@@ -176,10 +176,11 @@ export async function parseRecipeWithAI(input: ParseInput): Promise<RecipeData |
   const { title, author, sourceUrl, isTranscript = false } = input
   const description = input.description.slice(0, MAX_DESC_CHARS)
 
-  const sourceLabel = isTranscript ? 'Transcript' : 'Description'
+  const sourceLabel = isTranscript ? 'Content' : 'Description'
   const instruction = isTranscript
-    ? 'This is a spoken transcript from a cooking video — expect conversational language and no punctuation. ' +
-      'If it contains a recipe with ingredients and steps, call extract_recipe with the structured data. ' +
+    ? 'The content may include a written description (with ingredients) and a spoken transcript (with steps in conversational language). ' +
+      'Combine information from all sections to extract a complete recipe. ' +
+      'If it contains a recipe, call extract_recipe with the structured data. ' +
       'If there is no recipe, do not call the tool.'
     : 'If this description contains a recipe, call extract_recipe with the structured data. ' +
       'If there is no recipe, do not call the tool.'
@@ -232,3 +233,4 @@ export async function parseRecipeWithAI(input: ParseInput): Promise<RecipeData |
     servings: typeof inp.servings === 'string' ? inp.servings : null,
   }
 }
+

@@ -5,6 +5,7 @@ import { safeFetch, SSRFError, TRACKING_PARAMS } from '@/lib/fetch'
 import type { RecipeData } from '@/types/recipe'
 import { isYouTubeUrl, extractFromYouTube, extractFromYouTubeAPI } from '@/lib/youtube'
 import { isTikTokUrl, extractFromTikTok } from '@/lib/tiktok'
+import { isInstagramUrl, extractFromInstagram } from '@/lib/instagram'
 import { generateRecipeSummary, generateNutritionEstimate, parseRecipeWithAI } from '@/lib/ai-parser'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
@@ -191,13 +192,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (!tikTokResult.recipe) {
-      // Return whatever caption we fetched so the client can pre-fill the text mode
+      const isPhoto = /\/photo\/\d+/.test(normUrl)
+      const error = isPhoto
+        ? "The recipe is in the slide images and couldn't be read automatically. Tap through the slides and paste the ingredients and steps below."
+        : "We found the post but couldn't pull a recipe from it. If the recipe is in the description, paste it below and we'll structure it for you."
       return NextResponse.json(
-        {
-          error: "Pro tip: copy the video description and paste it in the \"Paste text\" tab — we'll turn it into a step-by-step recipe.",
-          sourceUrl: normUrl,
-          caption: tikTokResult.caption || undefined,
-        },
+        { error, sourceUrl: normUrl, caption: tikTokResult.caption || undefined },
         { status: 422 },
       )
     }
@@ -205,6 +205,40 @@ export async function POST(req: NextRequest) {
     await enhanceWithAI(tikTokResult.recipe)
     await logExtraction(userId, normUrl, tikTokResult.recipe.title ?? null)
     return NextResponse.json(tikTokResult.recipe)
+  }
+
+  // ─── Instagram reels & posts ──────────────────────────────────────────────────
+  if (isInstagramUrl(normUrl)) {
+    let instaResult: import('@/lib/instagram').InstagramResult
+    try {
+      instaResult = await extractFromInstagram(normUrl)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('ANTHROPIC_API_KEY')) {
+        return NextResponse.json(
+          { error: 'Server configuration error: AI key not set.', sourceUrl: normUrl },
+          { status: 503 },
+        )
+      }
+      return NextResponse.json(
+        { error: 'AI service error — please try again later.', sourceUrl: normUrl },
+        { status: 502 },
+      )
+    }
+
+    if (!instaResult.recipe) {
+      const error = instaResult.caption.length < 30
+        ? "We couldn't find the recipe — the post may be private or the caption was empty."
+        : "We found the post but the caption didn't contain a structured recipe. Paste the ingredients and steps below and we'll structure it."
+      return NextResponse.json(
+        { error, sourceUrl: normUrl, caption: instaResult.caption || undefined },
+        { status: 422 },
+      )
+    }
+
+    await enhanceWithAI(instaResult.recipe)
+    await logExtraction(userId, normUrl, instaResult.recipe.title ?? null)
+    return NextResponse.json(instaResult.recipe)
   }
 
   // ─── YouTube: use Data API v3 if key is present (bypasses IP blocking) ───────

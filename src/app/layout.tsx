@@ -21,22 +21,32 @@ export const metadata: Metadata = {
   },
 
   title: {
-    default: 'Cut Recipe — Skip the Story, Get Just the Recipe',
+    default: 'Free Recipe Extractor — YouTube, TikTok & Instagram | Cut Recipe',
     template: '%s | Cut Recipe',
   },
 
   description:
-    'Paste any recipe link and get just the ingredients and steps in seconds. ' +
-    'Works with YouTube, TikTok, and any recipe website. ' +
-    'No life stories, no pop-ups, no scrolling past twelve photos of a kitchen.',
+    'Free online recipe extractor and parser. Paste any YouTube video, TikTok, ' +
+    'Instagram reel or recipe site link — get just the ingredients and steps. ' +
+    'No sign-up, no ads, no life stories.',
 
   keywords: [
     'recipe extractor',
+    'recipe parser',
+    'recipe extractor youtube',
+    'recipe extractor tiktok',
+    'recipe extractor instagram',
+    'youtube recipe extractor',
+    'tiktok recipe extractor',
+    'instagram recipe extractor',
+    'extract recipe from video',
+    'recipe text extractor',
+    'recipe from youtube video',
+    'recipe from tiktok',
+    'recipe from instagram reel',
     'get just the recipe',
     'recipe without story',
     'skip the story recipe',
-    'YouTube recipe extractor',
-    'TikTok recipe extractor',
     'paste recipe link',
     'recipe ingredients steps',
     'clean recipe',
@@ -51,16 +61,17 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: BASE_URL,
     siteName: 'Cut Recipe',
-    title: 'Cut Recipe — Skip the Story, Get Just the Recipe',
+    title: 'Free Recipe Extractor — YouTube, TikTok & Instagram | Cut Recipe',
     description:
-      'Paste any recipe link and get just the ingredients and steps. ' +
-      'Works with YouTube, TikTok, and any recipe site.',
+      'Free recipe extractor and parser. Paste any YouTube, TikTok or Instagram link — ' +
+      'get just the ingredients and steps. No sign-up, no ads.',
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'Cut Recipe — Skip the Story, Get Just the Recipe',
-    description: 'Paste any recipe link and get just the ingredients and steps.',
+    title: 'Free Recipe Extractor — YouTube, TikTok & Instagram | Cut Recipe',
+    description:
+      'Free recipe extractor. Paste any YouTube, TikTok or Instagram link — get just the ingredients and steps.',
   },
 
   robots: {
@@ -85,6 +96,74 @@ export const viewport: Viewport = {
   themeColor: '#FBF7F1',
   width: 'device-width',
   initialScale: 1,
+}
+
+// SoftwareApplication schema — signals this is a free web tool to Google
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Cut Recipe',
+  url: BASE_URL,
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Web',
+  description:
+    'Free online recipe extractor and parser. Extract recipes from YouTube videos, TikTok reels, Instagram posts, and 40,000+ recipe websites. Get just the ingredients and steps — no ads, no sign-up.',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  featureList: [
+    'Recipe extractor for YouTube videos',
+    'Recipe extractor for TikTok videos and photo posts',
+    'Recipe extractor for Instagram reels',
+    'Recipe extraction from 40,000+ recipe websites',
+    'AI-powered recipe parser',
+  ],
+}
+
+// FAQPage schema — targets "how to extract recipe from X" featured snippets
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is a recipe extractor?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'A recipe extractor is a tool that pulls just the ingredients and steps from any recipe source — removing ads, long blog posts, autoplay videos, and other noise. Cut Recipe is a free recipe extractor that works with YouTube, TikTok, Instagram, and over 40,000 recipe websites.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I extract a recipe from a YouTube video?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Paste the YouTube video URL into Cut Recipe and click "Get the recipe". We read the video description and auto-generated transcript to extract the ingredients and steps automatically — no manual copy-pasting needed.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I extract a recipe from TikTok?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Paste any TikTok video or photo link into Cut Recipe. We extract the recipe from the caption text, spoken captions, and on-screen text overlays automatically — works for both video posts and photo carousels.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How do I extract a recipe from Instagram?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Paste any Instagram reel or post URL into Cut Recipe. We extract the full recipe from the post caption automatically — no Instagram account or login required.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is Cut Recipe free?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. Cut Recipe is completely free — no sign-up, no paywall, no premium tier. Paste any recipe link and get just the ingredients and steps in seconds.',
+      },
+    },
+  ],
 }
 
 // WebSite schema — helps Google understand the site's identity and purpose
@@ -124,6 +203,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={fraunces.variable}>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}

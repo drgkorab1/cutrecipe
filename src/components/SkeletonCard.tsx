@@ -53,6 +53,21 @@ const LOADING_MESSAGES = [
   "Hiding the author's childhood memory about soup…",
   "Removing 23 photos of the same dish from slightly different angles…",
   "Almost there… unlike the recipe, this won't take all day.",
+  "Scrubbing out the 'as an Amazon Associate I earn' disclaimer…",
+  "Convincing the video to just show the ingredients already…",
+  "Skipping the part where they explain what garlic is…",
+  "Quietly closing the 'rate this recipe' popup…",
+  "Ignoring the suggestion to follow on Instagram…",
+  "Extracting the recipe from between two banner ads…",
+  "Hiding the 14 photos of raw chicken nobody needed…",
+  "Translating 'cook until done' into something actionable…",
+  "Dismissing the notification to enable push alerts…",
+  "Bypassing the 'print friendly' version that isn't…",
+  "Removing the part where they apologize for being late to post…",
+  "Cutting the preamble that's longer than the actual recipe…",
+  "Negotiating with the paywall on your behalf…",
+  "Skimming past the paragraph about their kitchen renovation…",
+  "Silently judging the 47-step 'simple weeknight dinner'…",
 ]
 
 export default function SkeletonCard() {

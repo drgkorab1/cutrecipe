@@ -8,7 +8,7 @@ export default function Hero() {
       {/* Pill */}
       <div className="mb-[26px] inline-flex items-center gap-2 rounded-pill bg-accent-soft px-[15px] py-[7px] text-[13px] font-semibold text-accent">
         <span className="inline-block h-[7px] w-[7px] rounded-full bg-accent" />
-        Free forever — no signup, no paywall
+        Free recipe extractor &amp; parser — no signup needed
       </div>
 
       {/* H1 */}
@@ -24,8 +24,8 @@ export default function Hero() {
         className="mx-auto mb-[34px] text-muted"
         style={{ fontSize: 'clamp(15px, 4vw, 18px)', maxWidth: '52ch' }}
       >
-        No life story, no pop-ups, no scrolling past twelve photos of a kitchen.
-        Ingredients and steps, in two seconds.
+        Extract recipes from YouTube videos, TikTok reels, Instagram posts, and 40,000+ recipe sites.
+        Just the ingredients and steps — no stories, no ads.
       </p>
 
       {/* Search bar + result */}

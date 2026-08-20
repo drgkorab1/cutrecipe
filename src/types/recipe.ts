@@ -15,6 +15,7 @@ export interface RecipeData {
   author: string | null
   authorUrl: string | null
   sourceUrl: string
+  coverUrl?: string
   ingredients: string[]
   steps: string[]
   totalMinutes: number | null

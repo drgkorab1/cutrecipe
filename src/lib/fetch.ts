@@ -13,7 +13,7 @@ export class SSRFError extends Error {
 // Tracking params stripped from every URL before use as cache key (§3.3)
 export const TRACKING_PARAMS = [
   'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
-  'fbclid', 'gclid',
+  'fbclid', 'gclid', 'igsh', 'igshid',
 ]
 
 export const FETCH_HEADERS = {

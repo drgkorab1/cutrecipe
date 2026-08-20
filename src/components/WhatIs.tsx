@@ -1,12 +1,12 @@
-// What is Cut Recipe — SEO keyword section
+// What is a Recipe Extractor — SEO keyword section
 const BLURBS = [
   {
-    heading: 'Just the recipe. Nothing else.',
-    body: 'Cut Recipe is a free recipe extractor. Paste any link and get just the recipe — ingredients and steps only, no life story, no ads, no autoplay video. Just the recipe, on one clean page.',
+    heading: 'Free recipe extractor and parser',
+    body: "Cut Recipe is a free online recipe extractor and parser. Paste any link and get just the ingredients and steps — no life story, no ads, no autoplay video. It also works as a recipe parser for raw text: paste a TikTok caption or any block of recipe text and we'll structure it instantly.",
   },
   {
-    heading: 'Works with YouTube, TikTok, and 40,000+ sites',
-    body: 'Found a recipe on Allrecipes, BBC Good Food, Serious Eats, NYT Cooking, Bon Appétit, or a random TikTok? Paste the link and get just the recipe text, stripped of everything else.',
+    heading: 'Extract recipes from YouTube, TikTok, Instagram & more',
+    body: 'Paste a YouTube video link and we extract the recipe from the description and transcript. Paste a TikTok or Instagram reel and we pull the recipe from the caption. Works with Allrecipes, BBC Good Food, Serious Eats, NYT Cooking, Bon Appétit, and 40,000+ other sites too.',
   },
   {
     heading: 'Skip the blog post. Get just the recipe.',
@@ -14,7 +14,7 @@ const BLURBS = [
   },
   {
     heading: 'Free forever. No account needed.',
-    body: "No signup, no paywall, no premium tier. Paste the link, get the clean recipe in seconds. We always credit and link back to the original author.",
+    body: "No signup, no paywall, no premium tier. Paste any recipe link and get the clean recipe in seconds. We always credit and link back to the original author.",
   },
 ]
 
@@ -26,13 +26,13 @@ export default function WhatIs() {
           className="text-center font-serif font-semibold text-ink"
           style={{ fontSize: 34, marginBottom: 12 }}
         >
-          What is Cut Recipe?
+          What is a Recipe Extractor?
         </h2>
         <p
           className="mx-auto mb-[46px] text-center text-muted"
           style={{ fontSize: 17, maxWidth: '56ch' }}
         >
-          Paste a recipe link. Get just the recipe. No story, no ads, no scrolling.
+          Paste any recipe link — YouTube, TikTok, Instagram, or any site. Get just the ingredients and steps.
         </p>
 
         <div className="grid gap-x-10 gap-y-9 grid-cols-1 sm:grid-cols-2">

@@ -14,6 +14,7 @@ interface SavedRecipe {
   title: string
   author: string | null
   source_url: string | null
+  cover_url: string | null
   saved_at: string
   total_minutes: number | null
   servings: string | null
@@ -53,7 +54,7 @@ export default function AccountPage() {
     if (!user) return
     supabase
       .from('user_recipes')
-      .select('id, title, author, source_url, saved_at, total_minutes, servings, ingredients, steps')
+      .select('id, title, author, source_url, cover_url, saved_at, total_minutes, servings, ingredients, steps')
       .order('saved_at', { ascending: false })
       .then(({ data }) => { setRecipes((data as SavedRecipe[]) ?? []); setRecipesLoading(false) })
     supabase
@@ -319,7 +320,7 @@ export default function AccountPage() {
                   const ingCount = r.ingredients?.length ?? null
                   const stepsCount = r.steps?.length ?? null
                   const letter = r.title[0]?.toUpperCase() ?? '?'
-                  const thumbnail = getYouTubeThumbnail(r.source_url)
+                  const thumbnail = getYouTubeThumbnail(r.source_url) ?? r.cover_url ?? null
 
                   return (
                     <div
@@ -627,6 +628,7 @@ export default function AccountPage() {
               author: activeRecipe.author,
               authorUrl: null,
               sourceUrl: activeRecipe.source_url ?? '',
+              coverUrl: activeRecipe.cover_url ?? undefined,
               ingredients: activeRecipe.ingredients ?? [],
               steps: activeRecipe.steps ?? [],
               totalMinutes: activeRecipe.total_minutes,
